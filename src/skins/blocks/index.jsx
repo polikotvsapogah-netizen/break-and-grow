@@ -4,6 +4,7 @@ import { useApp } from '../../store.jsx'
 import { getPhrase } from '../../motivation.js'
 import { fx } from '../../game/fx.js'
 import { sfx } from '../../game/sfx.js'
+import { chiptune } from '../../game/chiptune.js'
 import './blocks.css'
 
 export const id = 'blocks'
@@ -72,9 +73,14 @@ export function Scene({ prog, phase }) {
     }
 
     const resize = () => {
-      W = canvas.width = canvas.offsetWidth || window.innerWidth
-      H = canvas.height = canvas.offsetHeight || window.innerHeight
-      cell = Math.max(13, Math.floor(W / 86)) // мелкие клетки, как в первой «идеальной» версии
+      // рисуем в физических пикселях (devicePixelRatio): фигуры не «раздуваются» при зуме
+      const dpr = Math.min(2, window.devicePixelRatio || 1)
+      W = canvas.offsetWidth || window.innerWidth
+      H = canvas.offsetHeight || window.innerHeight
+      canvas.width = W * dpr
+      canvas.height = H * dpr
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      cell = Math.max(11, Math.floor(W / 96)) // мелкие клетки, как в первой «идеальной» версии
       cols = Math.floor(W / cell)
       let top = H * 0.6
       try {
@@ -114,17 +120,29 @@ export function Scene({ prog, phase }) {
       st.n += 1
       const si = (Math.random() * SHAPES.length) | 0
       const shape = SHAPES[si]
+      // Оценка: бот ДОСТРАИВАЕТ почти полные ряды (бонус растёт квадратично
+      // от заполненности ряда) и даёт стеку расти до ~85% потолка — так линии
+      // реально собираются (в среднем раз в 1–2 минуты, выше — и по две сразу)
+      const rowFill = (r) => (st.grid[r] ? st.grid[r].filter(Boolean).length : 0)
       let perfect = null; let best = null
       for (let r = 0; r < 4; r += 1) {
         const cells = rotate(shape.cells, r)
-        const [w] = dims(cells)
+        const [w, h] = dims(cells)
         for (let c = 0; c <= cols - w; c += 1) {
           const ev = evalSlot(cells, c)
           if (!ev) continue
-          const score = ev.holes * 3 + ev.rowBase + Math.random() * 0.9
+          let bonus = 0
+          cells.forEach(([, y]) => {
+            const row = ev.rowBase + (h - 1 - y)
+            bonus += (rowFill(row) / cols) ** 2
+          })
+          const top = ev.rowBase + ev.h
+          const heightPen = top > maxRows * 0.85 ? (top - maxRows * 0.85) * 2.5 : 0
+          const score = ev.holes * 4 - bonus * 7 + heightPen + Math.random() * 0.6
           if (!best || score < best.score) best = { r, cells, col: c, score, ...ev }
-          if (ev.holes === 0 && ev.rowBase + ev.h <= maxRows) {
-            if (!perfect || ev.rowBase < perfect.rowBase) perfect = { r, cells, col: c, ...ev }
+          if (ev.holes === 0 && top <= maxRows) {
+            const pScore = -bonus // среди идеальных — самый полный ряд
+            if (!perfect || pScore < perfect.pScore) perfect = { r, cells, col: c, pScore, ...ev }
           }
         }
       }
@@ -179,9 +197,13 @@ export function Scene({ prog, phase }) {
           lang: s.settings.lang, name: s.profile.username, goal, liked: s.profile.likedPhrases,
         })
         ctx.font = '13px "Press Start 2P", monospace'
-        st.freeze = { rows, t: 0, phrase, textW: phrase ? ctx.measureText(phrase.text).width : 0, liked: false }
+        const textW = phrase ? ctx.measureText(phrase.text).width : 0
+        // медленный проплыв: скорость чтения ~85px/с, длительность от длины фразы
+        const len = Math.min(16, Math.max(7, (W + textW + 60) / 85))
+        st.freeze = { rows, t: 0, phrase, textW, len, liked: false }
         const snd = live.current.state.settings
         if (snd.sound) sfx.clear(snd.volume) // фанфара синхронно со сгоранием
+        chiptune.duck(len) // мелодия приглушается на время события
       }
     }
 
@@ -229,10 +251,11 @@ export function Scene({ prog, phase }) {
       if (st.freeze) {
         const f = st.freeze
         f.t += dt
+        const fLen = f.len || FREEZE_LEN
         if (f.phrase) {
           const rowY = H - (Math.max(...f.rows) + 1) * cell
           const travel = W + f.textW + 40
-          const tx = -f.textW + (f.t / (FREEZE_LEN - 0.5)) * travel
+          const tx = -f.textW + (f.t / (fLen - 0.4)) * travel
           ctx.font = '13px "Press Start 2P", monospace'
           ctx.fillStyle = '#0a0e1e'
           ctx.fillRect(Math.max(0, tx - 12), rowY + 1, f.textW + 46, cell - 2)
@@ -240,7 +263,7 @@ export function Scene({ prog, phase }) {
           ctx.fillText(f.phrase.text, tx, rowY + cell / 2 + 5)
           ctx.fillText(f.liked ? '♥' : '♡', tx + f.textW + 14, rowY + cell / 2 + 5)
         }
-        if (f.t >= FREEZE_LEN) {
+        if (f.t >= fLen) {
           f.rows.sort((a, b) => b - a).forEach((row) => st.grid.splice(row, 1))
           st.heights = new Array(cols).fill(0)
           st.grid.forEach((rowArr, r) => rowArr && rowArr.forEach((color, c) => {

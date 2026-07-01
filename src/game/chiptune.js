@@ -70,4 +70,16 @@ export const chiptune = {
     this.playing = false
   },
   setVolume(v) { vol = v },
+  // приглушить мелодию на sec секунд (синхрон с событием на экране)
+  duck(sec) {
+    if (!this.playing || !master || !ctx) return
+    try {
+      const t = ctx.currentTime
+      master.gain.cancelScheduledValues(t)
+      master.gain.setValueAtTime(master.gain.value, t)
+      master.gain.linearRampToValueAtTime(0.12, t + 0.2)
+      master.gain.setValueAtTime(0.12, t + Math.max(0.5, sec - 0.5))
+      master.gain.linearRampToValueAtTime(1, t + sec)
+    } catch { /* ок */ }
+  },
 }
