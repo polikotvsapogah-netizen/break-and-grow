@@ -34,29 +34,43 @@ npm run build    # соберёт dist/index.html (один файл)
 - Всё сохраняется локально (localStorage + IndexedDB), работает офлайн (кроме YouTube)
 - Таймер переживает перезагрузку страницы; экран не гаснет во время фокуса (Wake Lock)
 
-## Структура
+## Архитектура (модульная)
 
 ```
-index.html            — точка входа
-vite.config.js        — сборка в один файл (vite-plugin-singlefile)
+index.html              — точка входа (+PWA-манифест)
+vite.config.js          — сборка в один файл (vite-plugin-singlefile)
+public/                 — manifest.webmanifest, sw.js (офлайн), иконки
+.github/workflows/      — автодеплой на GitHub Pages
 src/
-  main.jsx            — монтирование React
-  App.jsx             — раскладка: топбар, таймер, панели, дровер, оверлей
-  store.jsx           — состояние + таймер-движок + персистентность
-  i18n.js             — словари RU/EN (90 ключей)
-  content.js          — упражнения, йога, аффирмации
-  db.js               — IndexedDB для медиа-блобов
-  audio.js            — сигналы WebAudio
-  yt.js               — парсинг ссылок + IFrame API
-  styles.css          — дизайн-система (темы, акценты, glassmorphism)
-  components/
-    TimerCard.jsx     — циферблат, режимы, минуты на лету
-    GoalsPanel.jsx    — глобальные цели и «зачем»
-    MusicPanel.jsx    — треки, отрезки A–B, YouTube-плеер
-    BackgroundLayer.jsx — градиенты / видео / YouTube-фон
-    BreakOverlay.jsx  — экран перерыва по режиму
-    SettingsPanel.jsx — секция кастомизации
+  main.jsx              — монтирование React + регистрация service worker
+  App.jsx               — раскладка: топбар, таймер, панели, дровер, оверлей
+  store.jsx             — состояние + таймер-движок + персистентность
+  i18n.js               — словари RU/EN
+  content.js            — упражнения, йога, аффирмации
+  db.js                 — IndexedDB для медиа-блобов
+  audio.js              — WebAudio-сигналы (колокольчик / чиптюн / синт)
+  yt.js                 — парсинг ссылок + IFrame API
+  styles.css            — дизайн-система (темы, акценты, glassmorphism)
+  game/                 — ФИЗИЧЕСКИЙ ДВИЖОК (общий слой)
+    engine.js           — rAF-цикл с dt, пружины, гравитация, демпфирование
+    fx.js               — шина событий частиц
+    FxCanvas.jsx        — canvas-частицы: баллистика, отскоки, вращение
+    sprites.jsx         — рендер пиксель-спрайтов из битмапов
+  skins/                — КАЖДЫЙ СКИН = САМОДОСТАТОЧНЫЙ МОДУЛЬ
+    index.js            — реестр: {Scene, burst, labelKey} на скин
+    shared.css          — общее: HUD-база, пикер, тёмная база
+    pixel/    index.jsx + pixel.css     — герой с физикой (инерция, прыжок, squash&stretch)
+    maze/     index.jsx + maze.css      — пак ест точки по прогрессу
+    blocks/   index.jsx + blocks.css    — фигуры падают с ускорением (v += g·dt)
+    invaders/ index.jsx + invaders.css  — флот редеет, взрывы частиц
+    synth/    index.jsx + synth.css     — солнце и сетка реагируют на прогресс
+  components/           — UI-слой
+    TimerCard.jsx       — циферблат, кольцо прогресса, READY-GO, минуты на лету
+    SkinHUD.jsx         — игровые SCORE/1UP/LEVEL-панели
+    GoalsPanel.jsx / MusicPanel.jsx / BackgroundLayer.jsx / BreakOverlay.jsx / SettingsPanel.jsx
 ```
+
+Добавить новый скин = создать папку в `skins/` и вписать одну строку в реестр. Движок (`game/`) переиспользуется всеми.
 
 ## Заметки
 
