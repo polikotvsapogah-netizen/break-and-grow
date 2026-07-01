@@ -29,7 +29,7 @@ export const defaultState = {
   goals: [],
   currentGoalId: null,
   music: {
-    source: 'none', // none | local | youtube
+    source: 'game', // дефолт — встроенный 8-бит луп под игровые скины
     tracks: [], // {id, name, start, end} — файл в IndexedDB под ключом track-{id}
     activeId: null,
     ytUrl: '', ytStart: 0, ytEnd: 0,

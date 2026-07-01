@@ -23,8 +23,15 @@ const HERO_B = [
 const PALETTE = { 1: '#ff8f00', 2: '#ffd9a0', 3: '#2f6fdd', 4: '#1d3f7d', 5: '#3b2412' }
 
 const HERO_X = 16
-const PIPES = [14, 64]
 const QBLOCKS = [44, 92, 144, 192] // мировые X «?»-рядов (лево ряда + ~2vw до блока)
+
+/* Уровни (цикл по числу сессий): свои препятствия, палитра, цвет флага.
+   type: pipe (труба, высота в px) | bricks (колонна кирпичей, n штук) */
+const LEVELS = [
+  { cls: 'lvl-1', obstacles: [{ x: 14, w: 5, h: 108, type: 'pipe' }, { x: 64, w: 5, h: 138, type: 'pipe' }] },
+  { cls: 'lvl-2', obstacles: [{ x: 20, w: 3, h: 88, type: 'bricks', n: 2 }, { x: 55, w: 5, h: 108, type: 'pipe' }, { x: 80, w: 3, h: 130, type: 'bricks', n: 3 }] },
+  { cls: 'lvl-3', obstacles: [{ x: 12, w: 5, h: 160, type: 'pipe' }, { x: 42, w: 3, h: 88, type: 'bricks', n: 2 }, { x: 70, w: 5, h: 108, type: 'pipe' }] },
+]
 
 /* История уровня (~5 минут, потом повторяется):
    монетки по земле → дуги монет → «?»-блоки отдают монеты → гриб-буст (скорость+рост)
@@ -57,12 +64,15 @@ export function Scene({ prog, phase }) {
 
   const sim = useRef({
     offset: Math.random() * 50, dist: 0, groundX: 0,
-    y: 0, vy: 0, sx: 1, sy: 1, t: 0,
-    flagJumped: false, prevPhase: 'idle', running: false,
+    y: 0, vy: 0, dx: 0, sx: 1, sy: 1, t: 0,
+    flagJumped: false, fired: false, prevPhase: 'idle', running: false,
     ents: [], nextId: 1,
     coinT: 3, arcT: 20, shroomT: 60, starT: 130, slimeT: 40, birdT: 10, sayT: 45,
-    qCool: {}, boostUntil: 0, starUntil: 0,
+    qCool: {}, boostUntil: 0, starUntil: 0, lateJump: false,
   })
+  const lvl = LEVELS[(appState.stats.sessions || 0) % LEVELS.length]
+  const lvlRef = useRef(lvl)
+  lvlRef.current = lvl
   const live = useRef({ prog, phase })
   live.current = { prog, phase }
 
@@ -87,10 +97,13 @@ export function Scene({ prog, phase }) {
     const heroPx = () => {
       try { const r = hero.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2] } catch { return [200, 400] }
     }
+    // Реалистичный сбор: монета «подбирается» (уходит в героя), БЕЗ россыпи —
+    // россыпь монет остаётся только у «?»-ящиков
     const collect = (e, n = 1) => {
       e.taken = true
-      const [px, py] = heroPx()
-      fx.fire('coins', px, py - 20, { n: 4 })
+      e.deadAt = s.t + 0.35
+      const el = entElsRef.current.get(e.id)
+      if (el) el.classList.add('taken')
       addCoinsRef.current(n)
     }
 
@@ -145,22 +158,50 @@ export function Scene({ prog, phase }) {
         }
       }
 
-      // --- прыжки: трубы, слизни и дуги монет ---
-      const jumpWindow = (gap) => gap > 3.5 && gap < 3.5 + Math.max(4, speed) * 0.42
-      if (!atFlagPhase && s.y === 0 && speed > 0) {
-        let doJump = false
-        for (const P of [PIPES[0], PIPES[1], PIPES[0] + 100, PIPES[1] + 100]) {
-          if (jumpWindow(P - s.offset - HERO_X)) { doJump = true; break }
-        }
-        if (!doJump) {
-          for (const e of s.ents) {
-            if (e.taken) continue
-            const sx = e.wx - s.dist
-            if ((e.type === 'slime' || (e.type === 'coin' && e.y > 46) || e.type === 'star') && jumpWindow(sx - HERO_X)) { doJump = true; break }
+      // --- препятствия: НАСТОЯЩИЕ коллизии ---
+      // герой либо перепрыгивает (высота прыжка рассчитана под препятствие),
+      // либо — если «затупил» — упирается и его ФИЗИЧЕСКИ толкает назад, пока не прыгнет
+      const heroL = HERO_X + s.dx
+      let colliding = false
+      if (!atFlagPhase && speed > 0) {
+        for (const ob of lvlRef.current.obstacles) {
+          for (const base of [ob.x, ob.x + 100]) {
+            const sx = base - s.offset
+            const gap = sx - (heroL + 2.6)
+            if (!s.lateJump && s.y === 0 && gap > 2 && gap < 2 + speed * 0.34) {
+              s.vy = Math.min(940, Math.sqrt(2 * GRAVITY * (ob.h + 42)))
+              s.y = 0.001; s.sx = 0.8; s.sy = 1.25
+              if (Math.random() < 0.18) s.lateJump = true // иногда «зазевается» у следующего
+            }
+            // упор в стенку: герой в теле препятствия ниже его верха
+            if (sx < heroL + 2.8 && sx + ob.w > heroL + 0.4 && s.y < ob.h - 8) {
+              colliding = true
+              s.dx -= speed * dt // мир едет — героя отжимает назад
+              s.sx = 0.9
+              if (s.y === 0) {
+                s.vy = Math.min(940, Math.sqrt(2 * GRAVITY * (ob.h + 46)))
+                s.y = 0.001
+                s.lateJump = false
+              }
+            }
           }
         }
-        if (doJump) { s.vy = 780; s.y = 0.001; s.sx = 0.8; s.sy = 1.25 }
+        // прыжки за дугами монет и через слизней
+        if (!colliding && s.y === 0) {
+          for (const e of s.ents) {
+            if (e.taken) continue
+            const esx = e.wx - s.dist
+            const gap = esx - heroL
+            if ((e.type === 'slime' || (e.type === 'coin' && e.y > 46) || e.type === 'star')
+              && gap > 3 && gap < 3 + speed * 0.4) {
+              s.vy = 760; s.y = 0.001; s.sx = 0.82; s.sy = 1.22
+              break
+            }
+          }
+        }
       }
+      if (!colliding) s.dx += (0 - s.dx) * 1.6 * dt // разбегается обратно вперёд
+      s.dx = Math.max(-9, Math.min(0, s.dx))
 
       // --- вертикаль героя ---
       if (s.y > 0 || s.vy !== 0) {
@@ -179,24 +220,24 @@ export function Scene({ prog, phase }) {
       // --- сущности: движение, коллизии, отрисовка ---
       const toRemove = []
       for (const e of s.ents) {
-        if (e.type === 'slime') e.wx -= 2.2 * dt // ползёт навстречу
-        if (e.type === 'bird') e.wx += speed * 0.4 * dt // летит медленнее мира
+        if (e.taken) {
+          if (s.t > (e.deadAt || 0)) toRemove.push(e.id)
+          continue
+        }
+        if (e.type === 'slime') e.wx -= 2.2 * dt
+        if (e.type === 'bird') e.wx += speed * 0.4 * dt
         if (e.type === 'star') e.y = 96 + Math.sin(s.t * 3 + e.id) * 14
         const sx = e.wx - s.dist
         if (sx < -14) { toRemove.push(e.id); continue }
-        // сбор
-        if (!e.taken && e.type !== 'bird' && Math.abs(sx - (HERO_X + 0.8)) < 2) {
+        // сбор: контакт с телом героя (позиция с учётом отката dx)
+        if (e.type !== 'bird' && Math.abs(sx - (heroL + 0.9)) < 1.9) {
           const heroTop = s.y + 60
           const overlap = e.y < heroTop + 12 && e.y + 26 > s.y - 6
           if (overlap) {
             if (e.type === 'coin') collect(e, 1)
             if (e.type === 'shroom') { collect(e, 2); s.boostUntil = s.t + 25; sayRef.current('powerup') }
             if (e.type === 'star') { collect(e, 3); s.starUntil = s.t + 12; sayRef.current('powerup') }
-            if (e.type === 'slime') {
-              // перепрыгнул? (герой в воздухе над слизнем)
-              if (s.y > 30) { e.taken = true; addCoinsRef.current(2); const [px, py] = heroPx(); fx.fire('coins', px, py, { n: 3 }) }
-            }
-            if (e.taken) toRemove.push(e.id)
+            if (e.type === 'slime' && s.y > 30) collect(e, 2) // перепрыгнул
           }
         }
         const el = entElsRef.current.get(e.id)
@@ -216,7 +257,15 @@ export function Scene({ prog, phase }) {
         s.flagJumped = true
         s.vy = 860; s.y = 0.001; s.sx = 0.8; s.sy = 1.25
       }
-      if (ph === 'focus' && p < 0.9) s.flagJumped = false
+      // финал уровня: салют у флага (по-разному ощущается за счёт палитры уровня)
+      if (atFlagPhase && !s.fired && flag) {
+        s.fired = true
+        try {
+          const r = flag.getBoundingClientRect()
+          fx.fire('coins', r.left, r.top + 10, { n: 10 })
+        } catch { /* ок */ }
+      }
+      if (ph === 'focus' && p < 0.9) { s.flagJumped = false; s.fired = false }
 
       // --- герой: squash/stretch, буст-рост, бег ---
       s.sx += (1 - s.sx) * 14 * dt
@@ -224,7 +273,7 @@ export function Scene({ prog, phase }) {
       const base = boost ? 1.22 : 1
       const running = speed > 0
       const bob = running && s.y === 0 ? Math.abs(Math.sin(s.t * (speed > 8 ? 13 : 9))) * 3.5 : 0
-      hero.style.transform = `translate(${HERO_X}vw, ${(-(s.y + bob)).toFixed(2)}px) scale(${(s.sx * base).toFixed(3)}, ${(s.sy * base).toFixed(3)})`
+      hero.style.transform = `translate(${(HERO_X + s.dx).toFixed(2)}vw, ${(-(s.y + bob)).toFixed(2)}px) scale(${(s.sx * base).toFixed(3)}, ${(s.sy * base).toFixed(3)})`
       hero.classList.toggle('hero-star', star)
       if (running !== s.running) {
         s.running = running
@@ -250,14 +299,22 @@ export function Scene({ prog, phase }) {
   const ents = sim.current.ents
 
   return (
-    <div className="scene scene-pixel">
+    <div className={`scene scene-pixel ${lvl.cls}`}>
       <div className="px-clouds">
         {[8, 34, 58, 82, 108, 134, 158, 182].map((x, i) => (
           <div key={i} className="px-cloud" style={{ left: `${x}vw`, top: `${8 + (i % 3) * 9}%` }} />
         ))}
       </div>
       <div className="px-world" ref={worldRef}>
-        {PIPES.flatMap(per).map((x, i) => <div key={`p${i}`} className="px-pipe" style={{ left: `${x}vw` }} />)}
+        {lvl.obstacles.flatMap((ob) => [ob, { ...ob, x: ob.x + 100 }]).map((ob, i) => (
+          ob.type === 'pipe'
+            ? <div key={`o${i}`} className="px-pipe" style={{ left: `${ob.x}vw`, width: `${ob.w}vw`, height: ob.h }} />
+            : (
+              <div key={`o${i}`} className="px-bcol" style={{ left: `${ob.x}vw` }}>
+                {Array.from({ length: ob.n }).map((_, j) => <span key={j} className="px-brick" />)}
+              </div>
+            )
+        ))}
         {bushes.flatMap(per).map((x, i) => <div key={`b${i}`} className="px-bush" style={{ left: `${x}vw` }} />)}
         {blocks.flatMap(per).map((x, i) => (
           <div key={`q${i}`} className="px-blockrow" style={{ left: `${x}vw` }}>

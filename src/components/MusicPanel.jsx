@@ -2,8 +2,9 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useApp, secToMmss, mmssToSec } from '../store.jsx'
 import { getMedia } from '../db.js'
 import { parseYouTubeId, loadYouTubeApi } from '../yt.js'
+import { chiptune } from '../game/chiptune.js'
 
-const SOURCES = ['none', 'local', 'youtube', 'spotify']
+const SOURCES = ['none', 'game', 'local', 'youtube', 'spotify']
 
 export default function MusicPanel() {
   const {
@@ -81,7 +82,14 @@ export default function MusicPanel() {
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = music.volume
     ytPlayerRef.current?.setVolume?.(Math.round(music.volume * 100))
+    chiptune.setVolume(music.volume)
   }, [music.volume])
+
+  // смена источника → глушим чиптюн
+  useEffect(() => {
+    if (music.source !== 'game') { chiptune.stop(); setPlaying(false) }
+    return () => chiptune.stop()
+  }, [music.source])
 
   // ---------- YOUTUBE ----------
   // ref на актуальный state для поллинга (границы отрезка меняются на лету)
@@ -149,16 +157,24 @@ export default function MusicPanel() {
     prevPhase.current = timer.phase
     if (!settings.autoPlayMusic) return
     if (timer.phase === 'focus') {
+      if (music.source === 'game') { chiptune.start(music.volume); setPlaying(true) }
       if (music.source === 'local' && activeTrack) playLocal()
       if (music.source === 'youtube' && ytId) playYt()
     } else {
+      chiptune.stop()
       stopLocal()
       stopYt()
     }
   }, [timer.phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const play = () => (music.source === 'local' ? playLocal() : playYt())
-  const stop = () => (music.source === 'local' ? stopLocal() : stopYt())
+  const play = () => {
+    if (music.source === 'game') { chiptune.start(music.volume); setPlaying(true); return }
+    return music.source === 'local' ? playLocal() : playYt()
+  }
+  const stop = () => {
+    if (music.source === 'game') { chiptune.stop(); setPlaying(false); return }
+    return music.source === 'local' ? stopLocal() : stopYt()
+  }
 
   return (
     <section className={`panel music-panel ${open ? '' : 'collapsed'}`}>
@@ -177,7 +193,7 @@ export default function MusicPanel() {
                 className={`seg ${music.source === s ? 'active' : ''}`}
                 onClick={() => setMusic({ source: s })}
               >
-                {t(s === 'none' ? 'musicNone' : s === 'local' ? 'musicLocal' : s === 'youtube' ? 'musicYouTube' : 'musicSpotify')}
+                {t(s === 'none' ? 'musicNone' : s === 'game' ? 'musicGame' : s === 'local' ? 'musicLocal' : s === 'youtube' ? 'musicYouTube' : 'musicSpotify')}
               </button>
             ))}
           </div>

@@ -20,12 +20,14 @@ export default function SkinHUD() {
   const prog = running && timer.totalMs > 0 ? 1 - timer.remainMs / timer.totalMs : 0
 
   if (skin === 'pixel') {
+    // «до флага»: осталось монет = оставшиеся минуты × 10 (25 мин → 250)
+    const toFlag = Math.max(0, Math.ceil((timeMs / 60000) * 10))
     return (
       <div className="skin-hud hud-pixel">
         <span className="hud-item">SCORE<b>{score}</b></span>
         <span className="hud-item hud-coin"><i className="coin-ico" />×{pad(s.coins || 0, 2)}</span>
-        <span className="hud-item">WORLD<b>1-{(s.sessions || 0) + 1}</b></span>
-        <span className="hud-item">TIME<b>{fmtTime(timeMs)}</b></span>
+        <span className="hud-item">WORLD<b>1-{((s.sessions || 0) % 3) + 1}</b></span>
+        <span className="hud-item">🚩<b>×{pad(toFlag, 3)}</b></span>
       </div>
     )
   }

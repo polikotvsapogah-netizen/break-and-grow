@@ -35,6 +35,7 @@ export const dict = {
     // Музыка
     music: 'Музыка',
     musicNone: 'Без музыки',
+    musicGame: '🎮 Game 8-бит',
     musicLocal: 'Мои треки',
     musicYouTube: 'YouTube',
     musicSpotify: 'Spotify',
@@ -157,6 +158,7 @@ export const dict = {
     remove: 'Delete',
     music: 'Music',
     musicNone: 'No music',
+    musicGame: '🎮 Game 8-bit',
     musicLocal: 'My tracks',
     musicYouTube: 'YouTube',
     musicSpotify: 'Spotify',
