@@ -4,6 +4,7 @@ import { createLoop, GRAVITY } from '../../game/engine.js'
 import { fx } from '../../game/fx.js'
 import { useApp } from '../../store.jsx'
 import { getPhrase } from '../../motivation.js'
+import { sfx } from '../../game/sfx.js'
 import './pixel.css'
 
 export const id = 'pixel'
@@ -105,6 +106,8 @@ export function Scene({ prog, phase }) {
       const el = entElsRef.current.get(e.id)
       if (el) el.classList.add('taken')
       addCoinsRef.current(n)
+      const snd = appRef.current.appState.settings
+      if (snd.sound) sfx.coin(snd.volume) // «динь» синхронно с подбором
     }
 
     const loop = createLoop((dt) => {
@@ -115,8 +118,8 @@ export function Scene({ prog, phase }) {
       const boost = s.t < s.boostUntil
       const star = s.t < s.starUntil
 
-      // --- скорость мира ---
-      const speed = atFlagPhase ? 0 : (ph === 'focus' ? 12 : 5) + (boost ? 3 : 0)
+      // --- скорость мира: спокойный аркадный темп ---
+      const speed = atFlagPhase ? 0 : (ph === 'focus' ? 7.5 : 3.5) + (boost ? 2 : 0)
       s.offset = (s.offset + speed * dt) % 100
       s.dist += speed * dt
       world.style.transform = `translateX(${(-s.offset).toFixed(3)}vw)`
@@ -171,6 +174,8 @@ export function Scene({ prog, phase }) {
             if (!s.lateJump && s.y === 0 && gap > 2 && gap < 2 + speed * 0.34) {
               s.vy = Math.min(940, Math.sqrt(2 * GRAVITY * (ob.h + 42)))
               s.y = 0.001; s.sx = 0.8; s.sy = 1.25
+              const snd = appRef.current.appState.settings
+              if (snd.sound) sfx.jump(snd.volume)
               if (Math.random() < 0.18) s.lateJump = true // иногда «зазевается» у следующего
             }
             // упор в стенку: герой в теле препятствия ниже его верха
@@ -263,6 +268,8 @@ export function Scene({ prog, phase }) {
         try {
           const r = flag.getBoundingClientRect()
           fx.fire('coins', r.left, r.top + 10, { n: 10 })
+          const snd = appRef.current.appState.settings
+          if (snd.sound) sfx.flag(snd.volume) // фанфара финала уровня
         } catch { /* ок */ }
       }
       if (ph === 'focus' && p < 0.9) { s.flagJumped = false; s.fired = false }

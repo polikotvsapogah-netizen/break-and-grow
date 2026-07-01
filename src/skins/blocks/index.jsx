@@ -3,6 +3,7 @@ import { createLoop } from '../../game/engine.js'
 import { useApp } from '../../store.jsx'
 import { getPhrase } from '../../motivation.js'
 import { fx } from '../../game/fx.js'
+import { sfx } from '../../game/sfx.js'
 import './blocks.css'
 
 export const id = 'blocks'
@@ -73,7 +74,7 @@ export function Scene({ prog, phase }) {
     const resize = () => {
       W = canvas.width = canvas.offsetWidth || window.innerWidth
       H = canvas.height = canvas.offsetHeight || window.innerHeight
-      cell = Math.max(20, Math.floor(W / 44))
+      cell = Math.max(13, Math.floor(W / 86)) // мелкие клетки, как в первой «идеальной» версии
       cols = Math.floor(W / cell)
       let top = H * 0.6
       try {
@@ -179,6 +180,8 @@ export function Scene({ prog, phase }) {
         })
         ctx.font = '13px "Press Start 2P", monospace'
         st.freeze = { rows, t: 0, phrase, textW: phrase ? ctx.measureText(phrase.text).width : 0, liked: false }
+        const snd = live.current.state.settings
+        if (snd.sound) sfx.clear(snd.volume) // фанфара синхронно со сгоранием
       }
     }
 
