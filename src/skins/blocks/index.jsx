@@ -9,14 +9,16 @@ export const id = 'blocks'
 export const labelKey = 'skinBlocks'
 export const burst = 'cells'
 
-/* ТЕТРИС-ИГРОК v3 (по ТЗ):
-   — падает ОДНА фигура; каждая 2-я/3-я (рандом) — ускоренная со шлейфом,
-     НО только если найден ИДЕАЛЬНЫЙ слот (ложится вплотную, без дыр) —
-     именно ускоренные и собирают линии;
-   — темп подобран так, чтобы стакан заполнился до уровня таймера за ~25 минут
-     и редко поднимался выше (контроллер темпа по целевой кривой);
-   — сгорание линии: всё замирает на ~6 сек, ряд мигает, по нему слева направо
-     проезжает мотивационная фраза; клик по ряду = лайк (личное предпочтение). */
+/* ТЕТРИС v4:
+   — фигуры идут НЕПРЕРЫВНО, одна за другой (пауза ~0.8с);
+   — фигура сначала «пролетает» немного, потом ускоряется; средняя скорость ×2;
+   — ускоренная (каждая 2-я/3-я): стартует строго у ЛЕВОГО или ПРАВОГО края
+     (зона видимости), в полёте ДОВОРАЧИВАЕТСЯ до нужной ориентации, затем
+     плавно съезжает по горизонтали в идеальный слот — как будто её ведёт
+     игрок — и только после этого делает hard drop со шлейфом;
+   — скорость растёт от собранных линий и времени: к ~45 минутам — максимум;
+   — настройки: вкл/выкл, начальная скорость, максимальная скорость;
+   — line clear: замирание, мигание, фраза слева направо, клик = ♥. */
 
 const SHAPES = [
   { c: '#37d6e8', cells: [[0, 0], [1, 0], [2, 0], [3, 0]] },
@@ -30,7 +32,7 @@ const SHAPES = [
 
 function rotate(cells, times) {
   let cs = cells
-  for (let i = 0; i < times; i += 1) {
+  for (let i = 0; i < (times % 4 + 4) % 4; i += 1) {
     const maxY = Math.max(...cs.map((c) => c[1]))
     cs = cs.map(([x, y]) => [maxY - y, x])
   }
@@ -53,17 +55,19 @@ export function Scene({ prog, phase }) {
   const actions = useRef({ addLines, likePhrase })
   actions.current = { addLines, likePhrase }
 
+  const enabled = state.settings.tetris?.on !== false
+
   useEffect(() => {
+    if (!enabled) return undefined
     const canvas = canvasRef.current
     const ctx = canvas.getContext && canvas.getContext('2d')
     if (!ctx) return undefined
 
     let W = 0; let H = 0; let cell = 26; let cols = 40; let maxRows = 8
     const st = {
-      grid: [], heights: [],
-      piece: null, n: 0, fastDue: 2 + ((Math.random() * 2) | 0),
-      spawnT: 2, focusT: 0,
-      freeze: null, // {rows, t, phrase, textW}
+      grid: [], heights: [], piece: null,
+      n: 0, fastDue: 2 + ((Math.random() * 2) | 0),
+      spawnT: 1, focusT: 0, lines: 0, freeze: null,
     }
 
     const resize = () => {
@@ -71,7 +75,6 @@ export function Scene({ prog, phase }) {
       H = canvas.height = canvas.offsetHeight || window.innerHeight
       cell = Math.max(20, Math.floor(W / 44))
       cols = Math.floor(W / cell)
-      // потолок стакана — нижняя кромка карточки таймера (визуал учитывает меню)
       let top = H * 0.6
       try {
         const card = document.querySelector('.timer-card')
@@ -83,9 +86,13 @@ export function Scene({ prog, phase }) {
     resize()
     window.addEventListener('resize', resize)
 
-    const filledCells = () => st.heights.reduce((a, b) => a + b, 0)
+    // множитель скорости: настройки + рост от линий и времени (макс к ~45 мин)
+    const speedMul = () => {
+      const t = live.current.state.settings.tetris || { s0: 1, sMax: 3 }
+      const ramp = Math.min(1, st.focusT / 2700 + st.lines * 0.03)
+      return t.s0 + (t.sMax - t.s0) * ramp
+    }
 
-    // оценка слота: rowBase и дыры (зазоры под фигурой)
     const evalSlot = (cells, col) => {
       const [w, h] = dims(cells)
       if (col < 0 || col > cols - w) return null
@@ -104,8 +111,8 @@ export function Scene({ prog, phase }) {
 
     const spawn = () => {
       st.n += 1
-      const shape = SHAPES[(Math.random() * SHAPES.length) | 0]
-      // перебираем повороты и позиции: ищем идеальные слоты и лучший обычный
+      const si = (Math.random() * SHAPES.length) | 0
+      const shape = SHAPES[si]
       let perfect = null; let best = null
       for (let r = 0; r < 4; r += 1) {
         const cells = rotate(shape.cells, r)
@@ -114,24 +121,36 @@ export function Scene({ prog, phase }) {
           const ev = evalSlot(cells, c)
           if (!ev) continue
           const score = ev.holes * 3 + ev.rowBase + Math.random() * 0.9
-          if (!best || score < best.score) best = { cells, col: c, score, ...ev }
+          if (!best || score < best.score) best = { r, cells, col: c, score, ...ev }
           if (ev.holes === 0 && ev.rowBase + ev.h <= maxRows) {
-            if (!perfect || ev.rowBase < perfect.rowBase) perfect = { cells, col: c, ...ev }
+            if (!perfect || ev.rowBase < perfect.rowBase) perfect = { r, cells, col: c, ...ev }
           }
         }
       }
       const wantFast = st.n >= st.fastDue
-      const fast = wantFast && !!perfect // ускоренная ТОЛЬКО в идеальный слот
-      if (fast) st.fastDue = st.n + 2 + ((Math.random() * 2) | 0) // каждая 2-я/3-я
+      const fast = wantFast && !!perfect
+      if (fast) st.fastDue = st.n + 2 + ((Math.random() * 2) | 0)
       const slot = fast ? perfect : best
       if (!slot) return
-      const startCol = Math.max(0, Math.min(cols - slot.w, slot.col + ((Math.random() * 6) | 0) - 3))
+      const mul = speedMul()
+      // ускоренная стартует у края с меньшей высотой (там виднее и «ближе» игроку)
+      const leftH = st.heights.slice(0, cols >> 1).reduce((a, b) => a + b, 0)
+      const rightH = st.heights.slice(cols >> 1).reduce((a, b) => a + b, 0)
+      const rot0 = fast ? (Math.random() * 4) | 0 : slot.r
+      const cells0 = rotate(shape.cells, rot0)
+      const [w0, h0] = dims(cells0)
+      const startCol = fast
+        ? (leftH <= rightH ? 0 : cols - w0)
+        : Math.max(0, Math.min(cols - slot.w, slot.col + ((Math.random() * 6) | 0) - 3))
       st.piece = {
-        cells: slot.cells, color: shape.c, w: slot.w, h: slot.h,
-        col: startCol, targetCol: slot.col,
-        x: startCol * cell, y: -slot.h * cell - 10,
-        v: fast ? 500 : 26, vmax: fast ? 1900 : 95 + Math.random() * 40,
-        g: fast ? 5200 : 78, fast, trail: [],
+        base: shape.cells, color: shape.c,
+        rot: rot0, cells: cells0, w: w0, h: h0,
+        targetRot: slot.r, targetCol: slot.col,
+        col: startCol, x: startCol * cell,
+        y: -h0 * cell - 8,
+        v: 60 * mul, vmax: fast ? 110 * mul : 190 * mul, // средняя ×2 против v3
+        g: fast ? 40 : 150 * mul,
+        fast, drop: false, rotT: 0, trail: [],
       }
     }
 
@@ -145,7 +164,7 @@ export function Scene({ prog, phase }) {
         st.heights[col] = Math.max(st.heights[col], row + 1)
       })
       st.piece = null
-      // полные ряды → freeze с фразой
+      st.spawnT = 0
       const full = []
       st.grid.forEach((rowArr, r) => {
         if (rowArr && rowArr.filter(Boolean).length >= cols) full.push(r)
@@ -163,17 +182,12 @@ export function Scene({ prog, phase }) {
       }
     }
 
-    // клик по мигающему ряду с фразой = лайк
     const onClick = (e) => {
       const f = st.freeze
       if (!f || !f.phrase || f.liked) return
       const rect = canvas.getBoundingClientRect()
       const y = e.clientY - rect.top
-      const inBand = f.rows.some((r) => {
-        const ry = H - (r + 1) * cell
-        return y > ry - 8 && y < ry + cell + 8
-      })
-      if (inBand) {
+      if (f.rows.some((r) => { const ry = H - (r + 1) * cell; return y > ry - 8 && y < ry + cell + 8 })) {
         f.liked = true
         actions.current.likePhrase(f.phrase.id)
         fx.fire('dots', e.clientX, e.clientY, { n: 6 })
@@ -191,35 +205,31 @@ export function Scene({ prog, phase }) {
       ctx.fillRect(x + 1, y + cell - 5, cell - 2, 4)
     }
 
-    const FREEZE_LEN = 6.2
+    const FREEZE_LEN = 6
     const loop = createLoop((dt) => {
       const focus = live.current.phase === 'focus'
       if (focus && !st.freeze) st.focusT += dt
 
       ctx.clearRect(0, 0, W, H)
 
-      // --- стакан ---
       st.grid.forEach((rowArr, r) => {
         if (!rowArr) return
         const fz = st.freeze && st.freeze.rows.includes(r)
         rowArr.forEach((color, c) => {
           if (!color) return
           const y = H - (r + 1) * cell
-          if (fz) {
-            const blink = Math.sin(st.freeze.t * 14) > -0.2
-            drawCell(c * cell, y, blink ? '#ffffff' : '#4dd7ff')
-          } else drawCell(c * cell, y, color)
+          if (fz) drawCell(c * cell, y, Math.sin(st.freeze.t * 14) > -0.2 ? '#ffffff' : '#4dd7ff')
+          else drawCell(c * cell, y, color)
         })
       })
 
-      // --- freeze: фраза едет по мигающему ряду ---
       if (st.freeze) {
         const f = st.freeze
         f.t += dt
         if (f.phrase) {
           const rowY = H - (Math.max(...f.rows) + 1) * cell
           const travel = W + f.textW + 40
-          const tx = -f.textW + (f.t / (FREEZE_LEN - 0.6)) * travel
+          const tx = -f.textW + (f.t / (FREEZE_LEN - 0.5)) * travel
           ctx.font = '13px "Press Start 2P", monospace'
           ctx.fillStyle = '#0a0e1e'
           ctx.fillRect(Math.max(0, tx - 12), rowY + 1, f.textW + 46, cell - 2)
@@ -233,35 +243,63 @@ export function Scene({ prog, phase }) {
           st.grid.forEach((rowArr, r) => rowArr && rowArr.forEach((color, c) => {
             if (color) st.heights[c] = Math.max(st.heights[c], r + 1)
           }))
+          st.lines += f.rows.length
           try { actions.current.addLines(f.rows.length) } catch { /* ок */ }
           st.freeze = null
+          st.spawnT = 0.5 // сразу продолжаем партию
         }
-        return // всё замерло, кроме фразы
+        return
       }
 
-      // --- контроллер темпа: заполнение до таймера за ~25 минут фокуса ---
+      // непрерывный поток: следующая фигура почти сразу после посадки
       if (!st.piece) {
         st.spawnT += dt
-        const fillNow = filledCells() / (cols * maxRows)
-        const fillTarget = Math.min(0.9, (st.focusT / 1500) + 0.06)
-        const interval = fillNow < fillTarget - 0.04 ? 2.6 : fillNow > fillTarget + 0.04 ? 15 : 7.5
-        if (st.spawnT > interval) { st.spawnT = 0; spawn() }
+        if (st.spawnT > 0.8) spawn()
       }
 
-      // --- активная фигура ---
       const p = st.piece
       if (p) {
+        const mul = speedMul()
         const ev = evalSlot(p.cells, p.col)
         const ry = H - (ev.rowBase + p.h) * cell
-        if (p.y < ry - 3 * cell && p.col !== p.targetCol) {
-          p.x += (p.targetCol * cell - p.x) * Math.min(1, 3.4 * dt)
-          p.col = Math.max(0, Math.min(cols - p.w, Math.round(p.x / cell)))
-        } else if (p.col !== p.targetCol && p.y < ry - cell) {
-          p.col = p.targetCol; p.x = p.targetCol * cell
+        const flying = p.y > H * 0.14 // «немного пролетела»
+
+        if (p.fast && !p.drop && flying) {
+          // фаза руления: доворот до нужной ориентации…
+          p.rotT += dt
+          if (p.rot % 4 !== p.targetRot % 4 && p.rotT > 0.16) {
+            p.rotT = 0
+            p.rot = (p.rot + 1) % 4
+            p.cells = rotate(p.base, p.rot)
+            const [w, h] = dims(p.cells)
+            p.w = w; p.h = h
+            p.col = Math.max(0, Math.min(cols - w, p.col))
+            p.x = Math.min(p.x, (cols - w) * cell)
+          }
+          // …и плавный сдвиг к слоту, как рукой игрока
+          const tx = p.targetCol * cell
+          if (Math.abs(p.x - tx) > 1.5) {
+            p.x += Math.sign(tx - p.x) * Math.min(Math.abs(tx - p.x), 620 * dt)
+            p.col = Math.max(0, Math.min(cols - p.w, Math.round(p.x / cell)))
+          } else if (p.rot % 4 === p.targetRot % 4) {
+            p.col = p.targetCol; p.x = tx
+            p.drop = true // выровнялась → hard drop
+            p.g = 6500; p.vmax = 2100
+          }
         }
+        if (!p.fast) {
+          // обычная: лёгкий дрейф к слоту в верхней трети
+          if (p.y < ry - 3 * cell && p.col !== p.targetCol) {
+            p.x += (p.targetCol * cell - p.x) * Math.min(1, 3.4 * dt)
+            p.col = Math.max(0, Math.min(cols - p.w, Math.round(p.x / cell)))
+          }
+          if (flying) p.g = 300 * mul // пролетела — ускоряется
+        }
+
         p.v = Math.min(p.vmax, p.v + p.g * dt)
         p.y += p.v * dt
-        if (p.fast) {
+
+        if (p.drop) {
           p.trail.push(p.y)
           if (p.trail.length > 9) p.trail.shift()
           p.trail.forEach((ty, k) => {
@@ -273,6 +311,7 @@ export function Scene({ prog, phase }) {
           })
           ctx.globalAlpha = 1
         }
+
         const ry2 = H - (evalSlot(p.cells, p.col).rowBase + p.h) * cell
         if (p.y >= ry2) landPiece(p)
         else p.cells.forEach(([x, y]) => drawCell(p.col * cell + x * cell, p.y + y * cell, p.color))
@@ -284,12 +323,12 @@ export function Scene({ prog, phase }) {
       canvas.removeEventListener('click', onClick)
       window.removeEventListener('resize', resize)
     }
-  }, [])
+  }, [enabled])
 
   return (
     <div className="scene scene-blocks">
       <div className="bl-grid" />
-      <canvas ref={canvasRef} className="bl-canvas" aria-hidden="true" />
+      {enabled && <canvas ref={canvasRef} className="bl-canvas" aria-hidden="true" />}
     </div>
   )
 }

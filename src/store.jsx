@@ -25,6 +25,7 @@ export const defaultState = {
     volume: 0.6,
     bg: { type: 'gradient', gradient: 'aurora', ytUrl: '', hasVideo: false },
     dim: 0.45,
+    tetris: { on: true, s0: 1, sMax: 3 }, // фон-тетрис: вкл, начальная и макс. скорость
   },
   goals: [],
   currentGoalId: null,
@@ -50,6 +51,7 @@ function loadPersisted() {
       settings: { ...defaultState.settings, ...saved.settings,
         breakMin: { ...defaultState.settings.breakMin, ...(saved.settings?.breakMin || {}) },
         bg: { ...defaultState.settings.bg, ...(saved.settings?.bg || {}) },
+        tetris: { ...defaultState.settings.tetris, ...(saved.settings?.tetris || {}) },
       },
       music: { ...defaultState.music, ...saved.music },
       stats: { ...defaultState.stats, ...saved.stats },

@@ -156,6 +156,36 @@ export default function SettingsPanel({ open, onClose }) {
             />
           </div>
 
+          {/* ---- Тетрис-фон (для стиля «Блокопад») ---- */}
+          {settings.skin === 'blocks' && (
+            <>
+              <h3 className="sec-title">{t('tetrisTitle')}</h3>
+              <Toggle
+                label={t('tetrisOn')}
+                checked={settings.tetris?.on !== false}
+                onChange={(v) => setSettings({ tetris: { ...settings.tetris, on: v } })}
+              />
+              <div className="field">
+                <span className="field-label">{t('tetrisS0')} · ×{settings.tetris?.s0 ?? 1}</span>
+                <div className="seg-row">
+                  {[0.5, 1, 1.5, 2].map((v) => (
+                    <button key={v} className={`seg ${(settings.tetris?.s0 ?? 1) === v ? 'active' : ''}`}
+                      onClick={() => setSettings({ tetris: { ...settings.tetris, s0: v } })}>×{v}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="field">
+                <span className="field-label">{t('tetrisSMax')} · ×{settings.tetris?.sMax ?? 3}</span>
+                <div className="seg-row">
+                  {[2, 3, 4, 6].map((v) => (
+                    <button key={v} className={`seg ${(settings.tetris?.sMax ?? 3) === v ? 'active' : ''}`}
+                      onClick={() => setSettings({ tetris: { ...settings.tetris, sMax: v } })}>×{v}</button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
           {/* ---- Таймер ---- */}
           <h3 className="sec-title">{t('sectionTimer')}</h3>
 
