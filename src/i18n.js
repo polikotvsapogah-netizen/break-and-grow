@@ -124,6 +124,7 @@ export const dict = {
     tetrisOn: 'Показывать тетрис',
     tetrisS0: 'Начальная скорость',
     tetrisSMax: 'Максимальная скорость',
+    tetrisCell: 'Размер фигур',
     // Прочее
     todayFocus: 'сегодня в фокусе',
     sessions: 'сессий',
@@ -245,6 +246,7 @@ export const dict = {
     tetrisOn: 'Show tetris',
     tetrisS0: 'Start speed',
     tetrisSMax: 'Max speed',
+    tetrisCell: 'Piece size',
     todayFocus: 'focused today',
     sessions: 'sessions',
     close: 'Close',

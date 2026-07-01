@@ -25,7 +25,7 @@ export const defaultState = {
     volume: 0.6,
     bg: { type: 'gradient', gradient: 'aurora', ytUrl: '', hasVideo: false },
     dim: 0.45,
-    tetris: { on: true, s0: 1, sMax: 3 }, // фон-тетрис: вкл, начальная и макс. скорость
+    tetris: { on: true, s0: 1, sMax: 3, cell: 18 }, // фон-тетрис: вкл, скорости, размер клетки
   },
   goals: [],
   currentGoalId: null,

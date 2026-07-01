@@ -58,6 +58,10 @@ export function Scene({ prog, phase }) {
   actions.current = { addLines, likePhrase }
 
   const enabled = state.settings.tetris?.on !== false
+  const cellSetting = state.settings.tetris?.cell || 18
+  const resizeRef = useRef(null)
+  // смена размера клетки в настройках → пересобрать стакан
+  useEffect(() => { resizeRef.current?.() }, [cellSetting])
 
   useEffect(() => {
     if (!enabled) return undefined
@@ -80,7 +84,7 @@ export function Scene({ prog, phase }) {
       canvas.width = W * dpr
       canvas.height = H * dpr
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      cell = Math.max(15, Math.floor(W / 88)) // исходная «идеальная» величина (~16px)
+      cell = live.current.state.settings.tetris?.cell || 18 // размер клетки — из настроек
       cols = Math.floor(W / cell)
       let top = H * 0.6
       try {
@@ -92,6 +96,7 @@ export function Scene({ prog, phase }) {
     }
     resize()
     window.addEventListener('resize', resize)
+    resizeRef.current = resize
 
     // множитель скорости: настройки + рост от линий и времени (макс к ~45 мин)
     const speedMul = () => {
