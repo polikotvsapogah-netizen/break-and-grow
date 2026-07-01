@@ -5,9 +5,11 @@
 .in-stars.s2 { background: radial-gradient(#9ef01a 0.8px, transparent 1.4px) 30px 60px / 70px 70px; opacity: 0.35; animation: starFall calc(40s * var(--spd)) linear infinite; }
 @keyframes starFall { from { background-position-y: 0; } to { background-position-y: 100vh; } }
 
+/* флот — узкой полосой по самому верху, НАД карточками (учитывает меню) */
 .in-fleet {
-  position: absolute; top: 9%; left: 50%; width: 384px; height: 160px; margin-left: -192px;
+  position: absolute; top: 6px; left: 50%; width: 520px; height: 58px; margin-left: -260px;
   animation: fleetMarch calc(3.6s * var(--spd)) steps(6) infinite alternate;
+  opacity: 0.9;
 }
 @keyframes fleetMarch { from { transform: translateX(-56px); } to { transform: translateX(56px); } }
 .in-alien { position: absolute; width: 33px; height: 24px; }

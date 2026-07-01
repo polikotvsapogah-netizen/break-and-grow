@@ -7,6 +7,7 @@ import MusicPanel from './components/MusicPanel.jsx'
 import BreakOverlay from './components/BreakOverlay.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
 import FxCanvas from './game/FxCanvas.jsx'
+import Onboarding from './components/Onboarding.jsx'
 
 export default function App() {
   const { state, t, setSettings } = useApp()
@@ -48,6 +49,7 @@ export default function App() {
       <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <BreakOverlay />
       <FxCanvas />
+      <Onboarding />
     </div>
   )
 }

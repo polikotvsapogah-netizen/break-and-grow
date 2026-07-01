@@ -13,7 +13,7 @@ export const defaultState = {
     lang: 'ru',
     theme: 'dark',
     accent: 'violet', // violet | teal | amber | rose
-    skin: 'classic', // classic | pixel | maze | blocks | invaders | synth
+    skin: 'pixel', // дефолт для новых пользователей — Марио-режим
     focusMin: 45,
     mode: 'goals', // goals | exercise | yoga
     breakMin: { goals: 5, exercise: 7, yoga: 12 },
@@ -36,6 +36,7 @@ export const defaultState = {
     volume: 0.8,
   },
   stats: { day: '', sessions: 0, focusedMin: 0, bestMin: 0, coins: 0, lines: 0 },
+  profile: { username: '', likedPhrases: [] }, // база для персонализации (позже — нейронка по API)
 }
 
 function loadPersisted() {
@@ -52,6 +53,7 @@ function loadPersisted() {
       },
       music: { ...defaultState.music, ...saved.music },
       stats: { ...defaultState.stats, ...saved.stats },
+      profile: { ...defaultState.profile, ...saved.profile },
     }
   } catch { return defaultState }
 }
@@ -301,6 +303,15 @@ export function AppProvider({ children }) {
   }, [])
   const setCurrentGoal = useCallback((id) => setState((st) => ({ ...st, currentGoalId: id })), [])
 
+  const setUsername = useCallback((username) => {
+    setState((st) => ({ ...st, profile: { ...st.profile, username: username.trim() } }))
+  }, [])
+  const likePhrase = useCallback((id) => {
+    setState((st) => st.profile.likedPhrases.includes(id) ? st : ({
+      ...st, profile: { ...st.profile, likedPhrases: [...st.profile.likedPhrases, id] },
+    }))
+  }, [])
+
   // Игровые счётчики сцен (монеты Марио, линии тетриса)
   const addCoins = useCallback((n = 1) => {
     setState((st) => ({ ...st, stats: { ...st.stats, coins: (st.stats.coins || 0) + n } }))
@@ -351,12 +362,12 @@ export function AppProvider({ children }) {
     state, t, timer,
     startFocus, startBreak, pauseToggle, resetTimer, adjustMinutes, closeOverlay, skipBreak,
     setSettings, setBg, setBreakMin,
-    addGoal, delGoal, setCurrentGoal, addCoins, addLines,
+    addGoal, delGoal, setCurrentGoal, addCoins, addLines, setUsername, likePhrase,
     setMusic, addTracks, updateTrack, delTrack,
     ensureNotifPermission,
   }), [state, t, timer, startFocus, startBreak, pauseToggle, resetTimer, adjustMinutes,
     closeOverlay, skipBreak, setSettings, setBg, setBreakMin, addGoal, delGoal,
-    setCurrentGoal, addCoins, addLines, setMusic, addTracks, updateTrack, delTrack, ensureNotifPermission])
+    setCurrentGoal, addCoins, addLines, setUsername, likePhrase, setMusic, addTracks, updateTrack, delTrack, ensureNotifPermission])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

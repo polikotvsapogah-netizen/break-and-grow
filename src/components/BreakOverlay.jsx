@@ -3,6 +3,8 @@ import { useApp, fmtTime } from '../store.jsx'
 import { exercises, yoga, affirmations, pickRandom } from '../content.js'
 import { fx } from '../game/fx.js'
 import { burstFor } from '../skins/index.js'
+import { getPhrase } from '../motivation.js'
+import Phrase from './Phrase.jsx'
 
 export default function BreakOverlay() {
   const {
@@ -26,6 +28,19 @@ export default function BreakOverlay() {
     return list[Math.floor(Math.random() * list.length)]
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang, timer.overlayKind, seed])
+
+  // Философская мотивация: почему перерыв важен (+персонализация по лайкам)
+  const pctx = { lang, name: state.profile.username, goal, liked: state.profile.likedPhrases }
+  const breakPhrase = useMemo(
+    () => getPhrase('breakStart', pctx),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [timer.overlayKind, lang],
+  )
+  const skipPhrase = useMemo(
+    () => getPhrase('breakSkip', pctx),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [timer.overlayKind, lang],
+  )
 
   // Canvas-салют с баллистикой при появлении оверлея завершённой сессии
   const celebrate = timer.overlay && timer.overlayKind !== 'done'
@@ -118,6 +133,9 @@ export default function BreakOverlay() {
               </div>
             )}
 
+            {/* Философия перерыва — кликабельная (лайк = запомнить предпочтение) */}
+            <Phrase phrase={breakPhrase} className="ov-break-phrase" />
+
             <div className="ov-actions">
               {isOffer && (
                 <button className="btn-primary" onClick={startBreak}>
@@ -126,6 +144,8 @@ export default function BreakOverlay() {
               )}
               <button className="btn-ghost" onClick={skipBreak}>⏩ {t('skipBreak')}</button>
             </div>
+            {/* мягкий уговор не пропускать отдых */}
+            <Phrase phrase={skipPhrase} className="ov-skip-phrase" />
           </>
         )}
       </div>

@@ -3,7 +3,7 @@ import { useApp } from '../store.jsx'
 import { putMedia } from '../db.js'
 import { GRADIENTS } from './BackgroundLayer.jsx'
 
-import { SKIN_IDS, SKIN_LABEL } from '../skins/index.js'
+import { SKIN_IDS, EXTRA_IDS, SKIN_LABEL } from '../skins/index.js'
 
 const ACCENTS = ['violet', 'teal', 'amber', 'rose']
 
@@ -13,6 +13,7 @@ export default function SettingsPanel({ open, onClose }) {
   } = useApp()
   const { settings } = state
   const [bgYtInput, setBgYtInput] = useState(settings.bg.ytUrl)
+  const [moreSkins, setMoreSkins] = useState(EXTRA_IDS.includes(settings.skin))
   const [notifState, setNotifState] = useState(
     typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
   )
@@ -57,6 +58,22 @@ export default function SettingsPanel({ open, onClose }) {
               </button>
             ))}
           </div>
+          <button className="btn-small more-skins" onClick={() => setMoreSkins(!moreSkins)}>
+            {moreSkins ? `▲ ${t('less')}` : `▼ ${t('more')}`}
+          </button>
+          {moreSkins && (
+            <div className="skin-grid">
+              {EXTRA_IDS.map((s) => (
+                <button
+                  key={s}
+                  className={`skin-thumb th-${s} ${settings.skin === s ? 'active' : ''}`}
+                  onClick={() => setSettings({ skin: s })}
+                >
+                  <span>{t(SKIN_LABEL[s])}</span>
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* ---- Оформление ---- */}
           <h3 className="sec-title">{t('sectionLook')}</h3>

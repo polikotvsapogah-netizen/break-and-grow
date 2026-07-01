@@ -39,6 +39,21 @@
   position: absolute; left: 0; right: 0; bottom: 39.4%; height: 3px;
   background: #ff5d8f; box-shadow: 0 0 34px 6px rgba(255, 93, 143, 0.75);
 }
+/* спидлайны по краям — ощущение движения даже за карточками */
+.scene-synth::before, .scene-synth::after {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 12vw; pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent 0 60px, rgba(77, 215, 255, 0.28) 60px 62px, transparent 62px 130px);
+  animation: syLines calc(0.9s * var(--spd)) linear infinite;
+  -webkit-mask: linear-gradient(90deg, #000, transparent);
+  mask: linear-gradient(90deg, #000, transparent);
+}
+.scene-synth::after {
+  right: 0; left: auto;
+  -webkit-mask: linear-gradient(270deg, #000, transparent);
+  mask: linear-gradient(270deg, #000, transparent);
+}
+.scene-synth::before { left: 0; }
+@keyframes syLines { to { background-position-y: 130px; } }
 
 /* UI */
 :root[data-skin='synth'] .clock-digits {

@@ -1,0 +1,130 @@
+/* ============ Дополнительные обложки ============ */
+
+/* КОСМОС: параллакс-звёзды, туманность, планета, комета */
+.scene-cosmos { background: radial-gradient(ellipse at 30% 20%, #101a3a 0%, #050810 55%, #02030a 100%); }
+.cs-stars { position: absolute; inset: -120px 0 0 0; }
+.cs-stars.s1 { background: radial-gradient(#fff 1px, transparent 1.4px) 0 0 / 140px 140px; opacity: .6; animation: csDrift 160s linear infinite; }
+.cs-stars.s2 { background: radial-gradient(#aFc8ff 0.8px, transparent 1.2px) 40px 70px / 90px 90px; opacity: .4; animation: csDrift 110s linear infinite; }
+.cs-stars.s3 { background: radial-gradient(#ffd9a0 0.7px, transparent 1.1px) 20px 30px / 60px 60px; opacity: .25; animation: csDrift 70s linear infinite; }
+@keyframes csDrift { to { background-position-y: 100vh; } }
+.cs-nebula {
+  position: absolute; inset: -20%;
+  background:
+    radial-gradient(40% 35% at 70% 30%, rgba(139, 92, 246, .25), transparent 70%),
+    radial-gradient(35% 40% at 25% 65%, rgba(45, 212, 191, .16), transparent 70%),
+    radial-gradient(30% 30% at 60% 75%, rgba(251, 113, 133, .12), transparent 70%);
+  filter: blur(10px);
+  animation: csNebula 40s ease-in-out infinite alternate;
+}
+@keyframes csNebula { to { transform: rotate(4deg) scale(1.06); } }
+.cs-planet {
+  position: absolute; right: 8%; top: 14%; width: 120px; height: 120px; border-radius: 50%;
+  background: radial-gradient(circle at 32% 30%, #8fb7ff, #3d5ba8 55%, #1a2850 80%);
+  box-shadow: inset -18px -12px 34px rgba(0,0,0,.6), 0 0 40px rgba(100, 140, 255, .25);
+  animation: csFloat 14s ease-in-out infinite alternate;
+}
+@keyframes csFloat { to { transform: translateY(16px); } }
+.cs-comet {
+  position: absolute; top: 20%; left: -10%; width: 3px; height: 3px; border-radius: 50%;
+  background: #fff; box-shadow: 0 0 12px 3px rgba(255,255,255,.8);
+  animation: csComet 13s linear infinite;
+}
+.cs-comet::before { content: ''; position: absolute; right: 2px; top: 0; width: 130px; height: 2px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.7)); }
+@keyframes csComet { 0%, 74% { transform: translate(0, 0); opacity: 0; } 76% { opacity: 1; } 100% { transform: translate(120vw, 32vh); opacity: 0; } }
+:root[data-skin='cosmos'] .ring-fg { stroke: #8fb7ff; }
+
+/* МИНИМАЛИЗМ: свет, воздух, дышащие окружности */
+:root[data-skin='minimal'][data-skin] {
+  --bg: #f4f4f2; --text: #1d1d1f; --muted: rgba(29, 29, 31, 0.5);
+  --glass: rgba(255, 255, 255, 0.72); --glass-strong: rgba(255, 255, 255, 0.92);
+  --stroke: rgba(29, 29, 31, 0.1); --input-bg: rgba(29, 29, 31, 0.05);
+  color-scheme: light;
+}
+.scene-minimal { background: linear-gradient(#f6f6f4, #ecece9); }
+.mn-circle { position: absolute; left: 50%; top: 46%; border-radius: 50%; border: 1px solid rgba(29,29,31,.1); transform: translate(-50%, -50%); }
+.mn-circle.c1 { width: 60vmin; height: 60vmin; animation: mnBreath 7s ease-in-out infinite alternate; }
+.mn-circle.c2 { width: 84vmin; height: 84vmin; animation: mnBreath 7s 0.6s ease-in-out infinite alternate; opacity: .6; }
+@keyframes mnBreath { to { transform: translate(-50%, -50%) scale(1.05); } }
+.mn-dot { position: absolute; left: 50%; top: 12%; width: 6px; height: 6px; border-radius: 50%; background: #1d1d1f; opacity: .35; }
+:root[data-skin='minimal'] .timer-card, :root[data-skin='minimal'] .panel { box-shadow: 0 18px 50px rgba(0,0,0,.07); backdrop-filter: blur(30px); }
+:root[data-skin='minimal'] .clock-digits { font-family: 'Inter', sans-serif; font-weight: 600; letter-spacing: -0.02em; text-shadow: none; }
+:root[data-skin='minimal'] .ring-fg { stroke: #1d1d1f; filter: none; }
+:root[data-skin='minimal'] .bg-dim { display: none; }
+
+/* ДЗЕН: рассвет над водой, медленные волны */
+.scene-zen { overflow: hidden; }
+.zn-sky { position: absolute; inset: 0; background: linear-gradient(#2b1b4d 0%, #7a4a7d 45%, #e8927c 68%, #f5c67d 78%); }
+.zn-sun {
+  position: absolute; left: 50%; top: calc(58% - var(--p, 0) * 12%); width: 15vmin; height: 15vmin;
+  transform: translateX(-50%); border-radius: 50%;
+  background: #ffe9c2; box-shadow: 0 0 60px 16px rgba(255, 220, 160, .55);
+  transition: top 2s linear;
+}
+.zn-wave { position: absolute; left: -12%; right: -12%; height: 30%; border-radius: 46% 54% 0 0 / 100% 100% 0 0; }
+.zn-wave.w1 { bottom: -6%; background: #241a3f; animation: znWave 9s ease-in-out infinite alternate; }
+.zn-wave.w2 { bottom: -11%; background: #322353; opacity: .8; animation: znWave 11s 1s ease-in-out infinite alternate; }
+.zn-wave.w3 { bottom: -16%; background: #43306b; opacity: .55; animation: znWave 13s 2s ease-in-out infinite alternate; }
+@keyframes znWave { to { transform: translateX(4%) scaleY(1.08); } }
+:root[data-skin='zen'] .ring-fg { stroke: #f5c67d; }
+:root[data-skin='zen'] .btn-primary { background: linear-gradient(180deg, #f0a880, #d97c62); }
+
+/* ТЕРМИНАЛ: интерфейс как консоль */
+:root[data-skin='terminal'][data-skin] {
+  --font-display: 'Courier New', monospace;
+  --radius: 2px; --radius-sm: 2px;
+  --glass: rgba(2, 12, 4, 0.85); --glass-strong: rgba(2, 12, 4, 0.95);
+  --stroke: rgba(46, 230, 107, 0.4); --input-bg: rgba(46, 230, 107, 0.07);
+  --text: #c9ffd8; --muted: rgba(201, 255, 216, 0.55);
+}
+.scene-terminal { background: #010703; }
+.tm-scan { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(0, 0, 0, 0.3) 3px 5px); }
+.tm-stream { position: absolute; white-space: pre; font: 13px/1.9 'Courier New', monospace; color: #2ee66b; opacity: 0.4; animation: tmUp 22s linear infinite; }
+.tm-stream.t1 { left: 4%; top: 100%; }
+.tm-stream.t2 { right: 5%; top: 100%; animation-duration: 30s; opacity: 0.22; }
+@keyframes tmUp { to { transform: translateY(-260vh); } }
+.tm-cursor { position: absolute; left: 4%; bottom: 5%; width: 10px; height: 18px; background: #2ee66b; animation: pelletBlink 1s steps(1) infinite; }
+:root[data-skin='terminal'] .clock-digits { color: #2ee66b; text-shadow: 0 0 14px rgba(46, 230, 107, 0.6); font-family: 'Courier New', monospace; font-weight: 700; }
+:root[data-skin='terminal'] .timer-card, :root[data-skin='terminal'] .panel, :root[data-skin='terminal'] .drawer, :root[data-skin='terminal'] .overlay-inner { border: 1px solid rgba(46, 230, 107, 0.5); box-shadow: 0 0 22px rgba(46, 230, 107, 0.12); backdrop-filter: none; }
+:root[data-skin='terminal'] .btn-primary { background: #0c471f; border: 1px solid #2ee66b; box-shadow: 0 0 16px rgba(46, 230, 107, 0.35); }
+:root[data-skin='terminal'] .ring-fg { stroke: #2ee66b; }
+
+/* АВРОРА: северное сияние */
+.au-sky { position: absolute; inset: 0; background: linear-gradient(#020615 0%, #04102a 60%, #071a30 100%); }
+.au-band { position: absolute; left: -20%; right: -20%; height: 42%; filter: blur(26px); opacity: 0.55; transform-origin: center; }
+.au-band.b1 { top: 6%; background: linear-gradient(100deg, transparent 12%, #2ee6a8 38%, #29c9e6 55%, transparent 85%); animation: auWave 13s ease-in-out infinite alternate; }
+.au-band.b2 { top: 20%; background: linear-gradient(95deg, transparent 18%, #7c5cf0 44%, #2ee6a8 66%, transparent 88%); animation: auWave 17s 1.5s ease-in-out infinite alternate; opacity: 0.4; }
+.au-band.b3 { top: 1%; background: linear-gradient(105deg, transparent 25%, #29e6c9 55%, transparent 80%); animation: auWave 21s 3s ease-in-out infinite alternate; opacity: 0.3; }
+@keyframes auWave { to { transform: translateX(6%) skewY(-3deg) scaleY(1.15); } }
+.au-stars { position: absolute; inset: 0; background: radial-gradient(#fff 1px, transparent 1.4px) 0 0 / 120px 120px; opacity: 0.5; }
+.au-ground { position: absolute; left: 0; right: 0; bottom: 0; height: 16%; background: linear-gradient(transparent, #01040c 55%); }
+:root[data-skin='aurora2'] .ring-fg { stroke: #2ee6a8; filter: drop-shadow(0 0 10px rgba(46, 230, 168, 0.5)); }
+:root[data-skin='aurora2'] .btn-primary { background: linear-gradient(90deg, #14907c, #2ee6a8); }
+
+/* ПОТОК: живой градиент-мезш */
+.scene-flow { background: #120f24; }
+.fl-blob { position: absolute; width: 55vmax; height: 55vmax; border-radius: 50%; filter: blur(70px); opacity: 0.55; }
+.fl-blob.b1 { background: #7c3aed; top: -18%; left: -12%; animation: flMove1 26s ease-in-out infinite alternate; }
+.fl-blob.b2 { background: #0ea5e9; bottom: -22%; right: -14%; animation: flMove2 31s ease-in-out infinite alternate; }
+.fl-blob.b3 { background: #fb7185; top: 34%; left: 42%; width: 36vmax; height: 36vmax; animation: flMove3 23s ease-in-out infinite alternate; opacity: 0.35; }
+@keyframes flMove1 { to { transform: translate(14vw, 12vh) scale(1.15); } }
+@keyframes flMove2 { to { transform: translate(-12vw, -10vh) scale(0.92); } }
+@keyframes flMove3 { to { transform: translate(-16vw, 8vh) scale(1.2); } }
+.fl-grain { position: absolute; inset: 0; opacity: 0.05; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+/* тёмная база для тёмных доп-обложек */
+:root[data-skin='cosmos'][data-skin], :root[data-skin='zen'][data-skin],
+:root[data-skin='terminal'][data-skin], :root[data-skin='aurora2'][data-skin], :root[data-skin='flow'][data-skin] {
+  --bg: #0b0d14; --text: #f2f3f7; --muted: rgba(242, 243, 247, 0.55);
+  --glass: rgba(255, 255, 255, 0.065); --glass-strong: rgba(16, 18, 28, 0.8);
+  --stroke: rgba(255, 255, 255, 0.12); --input-bg: rgba(255, 255, 255, 0.08);
+  color-scheme: dark;
+}
+:root[data-skin='terminal'][data-skin] { --glass: rgba(2, 12, 4, 0.85); --glass-strong: rgba(2, 12, 4, 0.95); --stroke: rgba(46, 230, 107, 0.4); --input-bg: rgba(46, 230, 107, 0.07); --text: #c9ffd8; --muted: rgba(201, 255, 216, 0.55); }
+
+/* превью в пикере */
+.th-cosmos { background: radial-gradient(circle at 70% 30%, #8fb7ff 4%, transparent 5%), radial-gradient(#fff 1px, transparent 1.5px) 4px 4px / 16px 16px, radial-gradient(ellipse at 30% 30%, #101a3a, #02030a); }
+.th-minimal { background: radial-gradient(circle at 50% 55%, transparent 32%, rgba(29,29,31,.14) 33%, transparent 34%), #f2f2ef; }
+.th-zen { background: linear-gradient(#2b1b4d 0%, #7a4a7d 45%, #e8927c 62%, #f5c67d 72%, #241a3f 72%); }
+.th-terminal { background: linear-gradient(rgba(46,230,107,.16) 1px, transparent 1px) 0 0 / 100% 7px, #010703; box-shadow: inset 0 0 0 1px rgba(46,230,107,.5); }
+.th-aurora2 { background: linear-gradient(100deg, transparent 20%, #2ee6a8 45%, #7c5cf0 62%, transparent 85%), #020615; }
+.th-flow { background: radial-gradient(circle at 25% 25%, #7c3aed 0%, transparent 55%), radial-gradient(circle at 75% 75%, #0ea5e9 0%, transparent 55%), #120f24; }

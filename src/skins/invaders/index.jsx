@@ -23,9 +23,9 @@ const SHIP = [
 
 export function Scene({ prog, phase }) {
   const fleet = []
-  for (let r = 0; r < 3; r += 1) for (let c = 0; c < 6; c += 1) fleet.push({ r, c })
+  for (let r = 0; r < 2; r += 1) for (let c = 0; c < 9; c += 1) fleet.push({ r, c })
   const cols = ['#9ef01a', '#4dd7ff', '#ff5d8f']
-  const dead = phase === 'focus' ? Math.min(17, Math.floor(prog * 18)) : 0
+  const dead = phase === 'focus' ? Math.min(fleet.length - 1, Math.floor(prog * fleet.length)) : 0
   const prevDead = useRef(0)
 
   // Каждый новый «сбитый» — взрыв частиц в его координатах
@@ -52,10 +52,10 @@ export function Scene({ prog, phase }) {
           <div
             key={i}
             className={`in-alien ${i >= fleet.length - dead ? 'dead' : ''}`}
-            style={{ left: c * 64, top: r * 52, '--blink': `${(i % 5) * 0.2}s` }}
+            style={{ left: c * 58, top: r * 30, '--blink': `${(i % 5) * 0.2}s` }}
           >
-            <PixelSprite map={ALIEN_A} size={3} color={cols[r]} className="al-f al-a" />
-            <PixelSprite map={ALIEN_B} size={3} color={cols[r]} className="al-f al-b" />
+            <PixelSprite map={ALIEN_A} size={2} color={cols[r]} className="al-f al-a" />
+            <PixelSprite map={ALIEN_B} size={2} color={cols[r]} className="al-f al-b" />
           </div>
         ))}
       </div>

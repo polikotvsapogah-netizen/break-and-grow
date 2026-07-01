@@ -3,6 +3,7 @@ import { ColorSprite } from '../../game/sprites.jsx'
 import { createLoop, GRAVITY } from '../../game/engine.js'
 import { fx } from '../../game/fx.js'
 import { useApp } from '../../store.jsx'
+import { getPhrase } from '../../motivation.js'
 import './pixel.css'
 
 export const id = 'pixel'
@@ -35,16 +36,31 @@ export function Scene({ prog, phase }) {
   const flagRef = useRef(null)
   const entElsRef = useRef(new Map())
   const [, setVer] = useState(0) // ре-рендер списка сущностей
-  const { addCoins } = useApp()
+  const [bubble, setBubble] = useState(null) // фраза-пузырь у героя
+  const { state: appState, addCoins, likePhrase } = useApp()
   const addCoinsRef = useRef(addCoins)
   addCoinsRef.current = addCoins
+  const appRef = useRef({ appState, likePhrase })
+  appRef.current = { appState, likePhrase }
+
+  // Фраза у героя: по событиям (гриб/звезда) и амбиентно раз в ~100с
+  const sayRef = useRef(null)
+  sayRef.current = (ctx) => {
+    const s = appRef.current.appState
+    const goal = s.goals.find((g) => g.id === s.currentGoalId)
+    const ph = getPhrase(ctx, { lang: s.settings.lang, name: s.profile.username, goal, liked: s.profile.likedPhrases })
+    if (ph) {
+      setBubble(ph)
+      setTimeout(() => setBubble((b) => (b && b.id === ph.id ? null : b)), 8000)
+    }
+  }
 
   const sim = useRef({
     offset: Math.random() * 50, dist: 0, groundX: 0,
     y: 0, vy: 0, sx: 1, sy: 1, t: 0,
     flagJumped: false, prevPhase: 'idle', running: false,
     ents: [], nextId: 1,
-    coinT: 3, arcT: 20, shroomT: 60, starT: 130, slimeT: 40, birdT: 10,
+    coinT: 3, arcT: 20, shroomT: 60, starT: 130, slimeT: 40, birdT: 10, sayT: 45,
     qCool: {}, boostUntil: 0, starUntil: 0,
   })
   const live = useRef({ prog, phase })
@@ -110,6 +126,8 @@ export function Scene({ prog, phase }) {
         if (s.starT <= 0) { spawn('star', { y: 96 }); s.starT = 240 }
         if (s.slimeT <= 0) { spawn('slime', { y: 0 }); s.slimeT = 90 + Math.random() * 30 }
         if (s.birdT <= 0) { spawn('bird', { y: 300 + Math.random() * 120 }); s.birdT = 22 + Math.random() * 10 }
+        s.sayT -= dt
+        if (s.sayT <= 0) { sayRef.current('ambient'); s.sayT = 95 + Math.random() * 40 }
       }
 
       // --- «?»-блоки отдают монету при проходе героя ---
@@ -172,8 +190,8 @@ export function Scene({ prog, phase }) {
           const overlap = e.y < heroTop + 12 && e.y + 26 > s.y - 6
           if (overlap) {
             if (e.type === 'coin') collect(e, 1)
-            if (e.type === 'shroom') { collect(e, 2); s.boostUntil = s.t + 25 }
-            if (e.type === 'star') { collect(e, 3); s.starUntil = s.t + 12 }
+            if (e.type === 'shroom') { collect(e, 2); s.boostUntil = s.t + 25; sayRef.current('powerup') }
+            if (e.type === 'star') { collect(e, 3); s.starUntil = s.t + 12; sayRef.current('powerup') }
             if (e.type === 'slime') {
               // перепрыгнул? (герой в воздухе над слизнем)
               if (s.y > 30) { e.taken = true; addCoinsRef.current(2); const [px, py] = heroPx(); fx.fire('coins', px, py, { n: 3 }) }
@@ -267,6 +285,17 @@ export function Scene({ prog, phase }) {
         <ColorSprite map={HERO_A} palette={PALETTE} className="hero-f hero-a" />
         <ColorSprite map={HERO_B} palette={PALETTE} className="hero-f hero-b" />
       </div>
+      {bubble && (
+        <div
+          className="scene-bubble px-bubble"
+          style={{ left: `${HERO_X - 2}vw`, bottom: '190px', pointerEvents: 'auto' }}
+          onClick={() => { appRef.current.likePhrase(bubble.id); setBubble(null) }}
+          title="♥"
+        >
+          {bubble.text}
+          <span className="b-heart">{appRef.current.appState.profile.likedPhrases.includes(bubble.id) ? '♥' : '♡'}</span>
+        </div>
+      )}
       <div className="px-ground" ref={groundRef} />
     </div>
   )

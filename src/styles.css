@@ -57,7 +57,8 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); ou
 }
 
 /* ============ Фон ============ */
-.bg-layer { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
+.bg-layer { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.bg-layer .bl-canvas { pointer-events: auto; }
 .bg-dim { position: absolute; inset: 0; background: #05060a; transition: opacity 0.4s; }
 /* Светлая тема: вуаль осветляет фон — но только в «Классике».
    В игровых скинах вуаль остаётся тёмной, иначе сцена выцветает. */
@@ -513,6 +514,55 @@ input[type='range'] { accent-color: var(--accent); }
   25% { transform: scale(1.35); opacity: 1; }
   100% { transform: scale(1); opacity: 0.9; }
 }
+
+/* ============ Мотивационные фразы (клик = лайк) ============ */
+.phrase {
+  display: inline-flex; align-items: baseline; gap: 8px;
+  max-width: 560px; text-align: center;
+  padding: 10px 16px; border-radius: 14px;
+  background: transparent; border: 1px dashed transparent;
+  font-size: 14.5px; font-style: italic; color: var(--muted);
+  line-height: 1.55; cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+.phrase:hover { color: var(--text); border-color: var(--stroke); background: var(--input-bg); }
+.phrase-heart { font-style: normal; font-size: 15px; color: var(--accent); opacity: 0.5; transition: all 0.2s; flex-shrink: 0; }
+.phrase:hover .phrase-heart { opacity: 1; }
+.phrase.is-liked .phrase-heart { opacity: 1; }
+.phrase.pop .phrase-heart { animation: heartPop 0.6s var(--ease); }
+@keyframes heartPop { 30% { transform: scale(1.8); } 100% { transform: scale(1); } }
+.ov-break-phrase { margin-top: 16px; }
+.ov-skip-phrase { margin-top: 8px; font-size: 12.5px; opacity: 0.85; }
+
+/* Пузырь фразы у героя в сцене */
+.scene-bubble {
+  position: absolute; z-index: 3;
+  max-width: 300px; padding: 10px 14px;
+  background: #fdf6e0; color: #1c2340;
+  border: 3px solid #1c2340; border-radius: 12px;
+  font-size: 12.5px; line-height: 1.45; font-weight: 600;
+  box-shadow: 0 4px 0 #1c2340;
+  cursor: pointer; animation: bubbleIn 0.4s var(--ease);
+}
+.scene-bubble::after {
+  content: ''; position: absolute; bottom: -12px; left: 26px;
+  border: 6px solid transparent; border-top-color: #1c2340;
+}
+.scene-bubble .b-heart { color: #d13c8f; margin-left: 6px; }
+@keyframes bubbleIn { from { transform: translateY(8px) scale(0.9); opacity: 0; } to { opacity: 1; } }
+
+/* ============ Онбординг ============ */
+.onboarding { z-index: 80; }
+.ob-inner { max-width: 440px; }
+.ob-mark { font-size: 44px; color: var(--accent); margin-bottom: 8px; }
+.ob-text { color: var(--muted); font-size: 14px; line-height: 1.5; margin-bottom: 20px; }
+.ob-form { display: flex; flex-direction: column; gap: 12px; }
+.ob-form input {
+  padding: 14px 18px; border-radius: 14px; text-align: center;
+  background: var(--input-bg); border: 1px solid var(--stroke);
+  font-size: 16px; font-weight: 600;
+}
+.ob-form .btn-primary:disabled { opacity: 0.5; cursor: default; }
 
 /* Доступность: меньше движения */
 @media (prefers-reduced-motion: reduce) {
