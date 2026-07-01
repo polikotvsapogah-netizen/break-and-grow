@@ -1,0 +1,68 @@
+/* КОСМО-РЕЙД: сцена + UI-оверрайды */
+.scene-invaders { background: radial-gradient(ellipse at 50% 120%, #06140a 0%, #030308 60%); }
+.in-stars { position: absolute; inset: -100px 0 0 0; }
+.in-stars.s1 { background: radial-gradient(#ffffff 1px, transparent 1.6px) 0 0 / 110px 110px; opacity: 0.5; animation: starFall calc(70s * var(--spd)) linear infinite; }
+.in-stars.s2 { background: radial-gradient(#9ef01a 0.8px, transparent 1.4px) 30px 60px / 70px 70px; opacity: 0.35; animation: starFall calc(40s * var(--spd)) linear infinite; }
+@keyframes starFall { from { background-position-y: 0; } to { background-position-y: 100vh; } }
+
+.in-fleet {
+  position: absolute; top: 9%; left: 50%; width: 384px; height: 160px; margin-left: -192px;
+  animation: fleetMarch calc(3.6s * var(--spd)) steps(6) infinite alternate;
+}
+@keyframes fleetMarch { from { transform: translateX(-56px); } to { transform: translateX(56px); } }
+.in-alien { position: absolute; width: 33px; height: 24px; }
+.in-alien .al-f { position: absolute; inset: 0; }
+.in-alien .al-b { opacity: 0; }
+.in-alien .al-a { animation: frameA 0.7s steps(1) infinite; animation-delay: var(--blink, 0s); }
+.in-alien .al-b { animation: frameB 0.7s steps(1) infinite; animation-delay: var(--blink, 0s); }
+.in-alien.dead { animation: alienBoom 0.45s steps(4) forwards; }
+@keyframes alienBoom {
+  0% { transform: scale(1); opacity: 1; filter: brightness(1); }
+  55% { transform: scale(1.55); opacity: 1; filter: brightness(2.6); }
+  100% { transform: scale(0.15); opacity: 0; }
+}
+
+.in-ship { position: absolute; bottom: 7%; left: 50%; width: 39px; animation: shipSlide 9s ease-in-out infinite alternate; }
+@keyframes shipSlide { from { transform: translateX(-42vw); } to { transform: translateX(42vw); } }
+.in-laser {
+  position: absolute; bottom: 24px; left: 18px; width: 3px; height: 42vh;
+  background: linear-gradient(to top, #9ef01a, transparent);
+  transform-origin: bottom; transform: scaleY(0);
+  animation: laserShot 2.4s ease-out infinite;
+}
+@keyframes laserShot { 0%, 55% { transform: scaleY(0); opacity: 0; } 60% { transform: scaleY(1); opacity: 1; } 78%, 100% { transform: scaleY(1); opacity: 0; } }
+
+.in-scanlines {
+  position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(0, 0, 0, 0.22) 2px 4px);
+}
+
+/* UI */
+:root[data-skin='invaders'] { --font-display: 'Press Start 2P', monospace; }
+:root[data-skin='invaders'] .clock-digits { font-size: clamp(30px, 7.5vw, 68px); color: #9ef01a; text-shadow: 0 0 18px rgba(158, 240, 26, 0.5); }
+:root[data-skin='invaders'] .timer-card, :root[data-skin='invaders'] .panel,
+:root[data-skin='invaders'] .overlay-inner, :root[data-skin='invaders'] .drawer {
+  border: 2px solid rgba(158, 240, 26, 0.55);
+  background: rgba(3, 10, 5, 0.78);
+  box-shadow: 0 0 26px rgba(158, 240, 26, 0.18);
+}
+:root[data-skin='invaders'] .brand-mark, :root[data-skin='invaders'] .sec-title { color: #9ef01a; }
+:root[data-skin='invaders'] .btn-primary { background: #157a2e; box-shadow: 0 0 22px rgba(158, 240, 26, 0.4); }
+
+/* HUD */
+.hud-invaders { color: #9ef01a; text-shadow: 0 0 8px rgba(158, 240, 26, 0.45); }
+.hud-ships { flex-direction: row !important; gap: 6px !important; align-items: center !important; }
+.ship-ico {
+  width: 16px; height: 9px; display: inline-block; background: #9ef01a;
+  clip-path: polygon(50% 0, 58% 38%, 100% 38%, 100% 100%, 0 100%, 0 38%, 42% 38%);
+}
+
+/* прогресс-бар */
+:root[data-skin='invaders'] .prog-ring { display: none; }
+:root[data-skin='invaders'] .clock-wrap { width: auto; aspect-ratio: auto; padding: 10px 0 2px; }
+:root[data-skin='invaders'] .prog-bar { display: block; border: 2px solid rgba(158, 240, 26, 0.6); background: rgba(3, 10, 5, 0.6); height: 14px; }
+:root[data-skin='invaders'] .prog-fill { background: linear-gradient(90deg, #157a2e, #9ef01a); box-shadow: 0 0 12px rgba(158, 240, 26, 0.5); }
+
+:root[data-skin='invaders'] .ready-go { color: #9ef01a; text-shadow: 0 0 40px rgba(158, 240, 26, 0.7); font-size: clamp(34px, 7.5vw, 84px); }
+
+@media (max-width: 700px) { .in-fleet { scale: 0.7; } }

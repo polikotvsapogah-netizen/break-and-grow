@@ -1,0 +1,35 @@
+/* БЛОКОПАД: сцена + UI-оверрайды */
+.scene-blocks { background: linear-gradient(#090d1d, #131a36 70%, #0b0f22); }
+.bl-grid {
+  position: absolute; inset: 0; opacity: 0.16;
+  background:
+    linear-gradient(rgba(255,255,255,.35) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.35) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+/* позицией фигур управляет физика (transform из rAF-цикла) */
+.bl-piece { position: absolute; top: 0; width: 48px; height: 32px; will-change: transform; }
+.bl-cell {
+  position: absolute; width: 15px; height: 15px;
+  box-shadow: inset 3px 3px 0 rgba(255, 255, 255, 0.4), inset -3px -3px 0 rgba(0, 0, 0, 0.4);
+}
+.bl-stack {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 30px;
+  background:
+    linear-gradient(rgba(255,255,255,.25) 0 4px, transparent 4px),
+    repeating-linear-gradient(90deg, #37d6e8 0 30px, #b06cf0 30px 60px, #ffd23f 60px 90px, #5ce65c 90px 120px, #ff5d5d 120px 150px, #4d7cff 150px 180px, #ff9f40 180px 210px);
+  box-shadow: 0 -6px 26px rgba(120, 140, 255, 0.35);
+  transition: height 0.9s var(--ease);
+}
+
+/* UI */
+:root[data-skin='blocks'] { --radius: 8px; --radius-sm: 6px; }
+:root[data-skin='blocks'] .clock-digits { text-shadow: 4px 4px 0 rgba(80, 100, 255, 0.35); }
+:root[data-skin='blocks'] .btn-primary { box-shadow: inset 3px 3px 0 rgba(255,255,255,.35), inset -3px -3px 0 rgba(0,0,0,.3), 0 10px 30px var(--accent-soft); border-radius: 6px; }
+:root[data-skin='blocks'] .timer-card, :root[data-skin='blocks'] .panel { border-width: 2px; }
+:root[data-skin='blocks'] .ring-fg { stroke: #37d6e8; }
+:root[data-skin='blocks'] .ready-go { color: #37d6e8; text-shadow: 6px 6px 0 rgba(80, 100, 255, 0.4); }
+
+/* HUD */
+.hud-blocks { color: #dfe6ff; }
+.hud-blocks b { color: #37d6e8; }

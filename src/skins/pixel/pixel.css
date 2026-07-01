@@ -1,0 +1,146 @@
+/* ПИКСЕЛЬ-КВЕСТ: сцена + UI-оверрайды */
+.scene-pixel { background: linear-gradient(#4a86f8 0%, #5c94fc 55%, #8fc0ff 100%); image-rendering: pixelated; }
+
+.px-clouds { position: absolute; inset: 0; width: 200vw; animation: pxDrift calc(150s * var(--spd)) linear infinite; }
+.px-cloud {
+  position: absolute; width: 84px; height: 30px; background: #fff; border-radius: 16px;
+  box-shadow: 22px -14px 0 -2px #fff, 44px 0 0 -4px #fff, -6px 4px 0 0 rgba(255,255,255,.9);
+  opacity: .95;
+}
+.px-world { position: absolute; inset: 0; width: 200vw; animation: pxDrift calc(38s * var(--spd)) linear infinite; }
+@keyframes pxDrift { from { transform: translateX(0); } to { transform: translateX(-100vw); } }
+
+.px-ground {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 92px;
+  background:
+    linear-gradient(#3ecf4a 0 14px, transparent 14px),
+    repeating-linear-gradient(90deg, #c8581c 0 44px, #93400f 44px 48px),
+    repeating-linear-gradient(0deg, #c8581c 0 22px, #93400f 22px 26px);
+  border-top: 4px solid #1c5c22;
+  animation: pxGround calc(1.8s * var(--spd)) linear infinite;
+}
+@keyframes pxGround { from { background-position-x: 0, 0, 0; } to { background-position-x: 0, -48px, 0; } }
+
+.px-pipe {
+  position: absolute; bottom: 92px; width: 72px; height: 108px;
+  background: linear-gradient(90deg, #0b7d38, #21d06b 42%, #0fa04a 70%, #0b7d38);
+  border: 4px solid #063d1c; border-bottom: none;
+}
+.px-pipe::before {
+  content: ''; position: absolute; top: -34px; left: -12px; right: -12px; height: 34px;
+  background: linear-gradient(90deg, #0b7d38, #26e879 42%, #0fa04a 70%, #0b7d38);
+  border: 4px solid #063d1c;
+}
+.px-bush {
+  position: absolute; bottom: 92px; width: 96px; height: 34px;
+  background: #2eb838; border-radius: 18px 18px 0 0;
+  box-shadow: 30px -12px 0 -4px #2eb838, 58px 0 0 -6px #2eb838;
+}
+.px-blockrow { position: absolute; bottom: 262px; display: flex; gap: 8px; }
+.px-brick, .px-qblock { width: 42px; height: 42px; flex-shrink: 0; border: 4px solid #5c2a08; box-sizing: border-box; }
+.px-brick {
+  background:
+    linear-gradient(rgba(255,255,255,.25) 0 4px, transparent 4px),
+    repeating-linear-gradient(0deg, #d2691e 0 17px, #5c2a08 17px 21px),
+    repeating-linear-gradient(90deg, #d2691e 0 17px, #5c2a08 17px 21px);
+  background-color: #d2691e;
+}
+.px-qblock {
+  display: flex; align-items: center; justify-content: center;
+  background: #ffb02e; color: #7a3b00;
+  font-family: 'Press Start 2P', monospace; font-size: 18px;
+  box-shadow: inset 3px 3px 0 rgba(255,255,255,.5), inset -3px -3px 0 rgba(0,0,0,.25);
+  animation: qBounce 2.6s ease-in-out infinite;
+}
+@keyframes qBounce { 0%, 84%, 100% { transform: translateY(0); } 90% { transform: translateY(-8px); } }
+.px-coin {
+  position: absolute; top: -52px; left: 58px;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #ffe9a8, #ffc93c 55%, #d99a12);
+  border: 3px solid #9a6a00;
+  box-shadow: inset 0 0 0 3px rgba(255,255,255,.35);
+  animation: coinSpin 1.3s ease-in-out infinite;
+}
+@keyframes coinSpin { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(0.14); } }
+
+/* Флаг-цель */
+.px-flag { position: absolute; bottom: 92px; left: 79vw; width: 8px; height: 210px; }
+.flag-pole {
+  position: absolute; bottom: 0; left: 0; width: 7px; height: 100%;
+  background: linear-gradient(90deg, #bfe8c4, #4f8f55);
+  border: 2px solid #1c5c22; box-sizing: border-box;
+}
+.flag-ball { position: absolute; top: -15px; left: -5px; width: 17px; height: 17px; border-radius: 50%; background: #ffd23f; border: 3px solid #9a6a00; box-sizing: border-box; }
+.flag-cloth {
+  position: absolute; top: 4px; right: 7px; width: 0; height: 0;
+  border-top: 15px solid transparent; border-bottom: 15px solid transparent; border-right: 36px solid #ff4f4f;
+  transform-origin: right center;
+  animation: flagWave 1.3s ease-in-out infinite;
+  filter: drop-shadow(-2px 2px 0 rgba(0, 0, 0, 0.12));
+}
+@keyframes flagWave { 50% { transform: scaleX(0.9) skewY(4deg); } }
+
+/* Герой: позицией управляет физика (transform из rAF-цикла) */
+.px-hero {
+  position: absolute; left: 0; bottom: 92px;
+  width: 48px; height: 56px;
+  transform-origin: 50% 100%;
+  will-change: transform;
+  filter: drop-shadow(0 4px 0 rgba(0,0,0,.2));
+}
+.px-hero .hero-f { position: absolute; left: 0; bottom: 0; }
+.px-hero .hero-b { opacity: 0; }
+.px-hero[data-moving='1'] .hero-a { animation: frameA 0.3s steps(1) infinite; }
+.px-hero[data-moving='1'] .hero-b { animation: frameB 0.3s steps(1) infinite; }
+@keyframes frameA { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes frameB { 0%, 49% { opacity: 0; } 50%, 100% { opacity: 1; } }
+
+/* --- UI: жирные рамки, «нажимные» кнопки, пиксель-шрифт --- */
+:root[data-skin='pixel'] {
+  --font-display: 'Press Start 2P', monospace;
+  --radius: 2px; --radius-sm: 2px;
+  --text: #1c2340; --muted: rgba(28, 35, 64, 0.62);
+  --glass: rgba(255, 248, 224, 0.93); --glass-strong: #fdf3d8;
+  --stroke: #1c2340; --input-bg: rgba(28, 35, 64, 0.08);
+  color-scheme: light;
+}
+:root[data-skin='pixel'] .timer-card, :root[data-skin='pixel'] .panel,
+:root[data-skin='pixel'] .overlay-inner, :root[data-skin='pixel'] .drawer {
+  border: 4px solid #1c2340; box-shadow: 0 6px 0 #1c2340;
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+:root[data-skin='pixel'] .clock-digits { font-size: clamp(30px, 7.5vw, 68px); letter-spacing: 3px; text-shadow: 4px 4px 0 rgba(28, 35, 64, 0.18); }
+:root[data-skin='pixel'] .brand-name, :root[data-skin='pixel'] .ov-title { font-size: 90%; line-height: 1.5; }
+:root[data-skin='pixel'] .btn-primary, :root[data-skin='pixel'] .btn-ghost, :root[data-skin='pixel'] .btn-small,
+:root[data-skin='pixel'] .chip, :root[data-skin='pixel'] .mode-pill, :root[data-skin='pixel'] .seg,
+:root[data-skin='pixel'] .lang-btn, :root[data-skin='pixel'] .gear-btn {
+  border: 3px solid #1c2340; border-radius: 2px; box-shadow: 0 4px 0 #1c2340;
+  transition: transform 0.06s, box-shadow 0.06s;
+}
+:root[data-skin='pixel'] .btn-primary { background: var(--accent); }
+:root[data-skin='pixel'] .btn-primary:hover { transform: none; filter: brightness(1.05); }
+:root[data-skin='pixel'] .btn-primary:active, :root[data-skin='pixel'] .chip:active,
+:root[data-skin='pixel'] .mode-pill:active, :root[data-skin='pixel'] .btn-ghost:active {
+  transform: translateY(4px); box-shadow: 0 0 0 #1c2340;
+}
+:root[data-skin='pixel'] .bg-dim { display: none; }
+
+/* HUD */
+.hud-pixel { color: #1c2340; }
+
+/* прогресс: пиксель-бар вместо кольца */
+:root[data-skin='pixel'] .prog-ring { display: none; }
+:root[data-skin='pixel'] .clock-wrap { width: auto; aspect-ratio: auto; padding: 10px 0 2px; }
+:root[data-skin='pixel'] .prog-bar { display: block; border: 3px solid #1c2340; background: #fff; height: 20px; }
+:root[data-skin='pixel'] .prog-fill {
+  background: repeating-linear-gradient(90deg, #ffc93c 0 12px, #d99a12 12px 16px);
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* READY?/GO! */
+:root[data-skin='pixel'] .ready-go {
+  color: #fff; -webkit-text-stroke: 3px #1c2340; text-shadow: 5px 5px 0 #1c2340;
+  font-size: clamp(34px, 7.5vw, 84px);
+}
+
+@media (max-width: 700px) { .px-hero { transform-origin: 50% 100%; } }
