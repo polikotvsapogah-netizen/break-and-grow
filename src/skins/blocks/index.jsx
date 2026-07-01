@@ -1,110 +1,252 @@
 import React, { useEffect, useRef } from 'react'
 import { createLoop } from '../../game/engine.js'
+import { useApp } from '../../store.jsx'
 import './blocks.css'
 
 export const id = 'blocks'
 export const labelKey = 'skinBlocks'
 export const burst = 'cells'
 
-const TETRO = [
-  { cells: [[0, 0], [1, 0], [2, 0], [3, 0]], c: '#37d6e8' }, // I
-  { cells: [[0, 0], [1, 0], [0, 1], [1, 1]], c: '#ffd23f' }, // O
-  { cells: [[0, 0], [1, 0], [2, 0], [1, 1]], c: '#b06cf0' }, // T
-  { cells: [[1, 0], [2, 0], [0, 1], [1, 1]], c: '#5ce65c' }, // S
-  { cells: [[0, 0], [1, 0], [1, 1], [2, 1]], c: '#ff5d5d' }, // Z
-  { cells: [[0, 0], [0, 1], [1, 1], [2, 1]], c: '#4d7cff' }, // J
-  { cells: [[2, 0], [0, 1], [1, 1], [2, 1]], c: '#ff9f40' }, // L
+/* «Призрачный игрок»: симуляция партии в тетрис на canvas.
+   — виртуальная сетка внизу экрана, фигуры реально СКЛАДЫВАЮТСЯ
+   — бот целится в самый низкий столбец (с шумом) и планирует туда в полёте
+   — обычные фигуры падают медленно, каждая 5-я — hard-drop со световым шлейфом
+   — полные ряды вспыхивают и сгорают (line clear), стакан оседает */
+
+const SHAPES = [
+  { c: '#37d6e8', cells: [[0, 0], [1, 0], [2, 0], [3, 0]] }, // I
+  { c: '#ffd23f', cells: [[0, 0], [1, 0], [0, 1], [1, 1]] }, // O
+  { c: '#b06cf0', cells: [[0, 0], [1, 0], [2, 0], [1, 1]] }, // T
+  { c: '#5ce65c', cells: [[1, 0], [2, 0], [0, 1], [1, 1]] }, // S
+  { c: '#ff5d5d', cells: [[0, 0], [1, 0], [1, 1], [2, 1]] }, // Z
+  { c: '#4d7cff', cells: [[0, 0], [0, 1], [1, 1], [2, 1]] }, // J
+  { c: '#ff9f40', cells: [[2, 0], [0, 1], [1, 1], [2, 1]] }, // L
 ]
 
+function rotate(cells, times) {
+  let cs = cells
+  for (let i = 0; i < times; i += 1) {
+    const maxY = Math.max(...cs.map((c) => c[1]))
+    cs = cs.map(([x, y]) => [maxY - y, x])
+  }
+  const minX = Math.min(...cs.map((c) => c[0]))
+  const minY = Math.min(...cs.map((c) => c[1]))
+  return cs.map(([x, y]) => [x - minX, y - minY])
+}
+
 export function Scene({ prog, phase }) {
-  const refs = useRef([])
-  const sims = useRef(null)
-  const live = useRef({ prog, phase })
-  live.current = { prog, phase }
+  const canvasRef = useRef(null)
+  const { addLines } = useApp()
+  const live = useRef({ phase })
+  live.current = { phase }
+  const addLinesRef = useRef(addLines)
+  addLinesRef.current = addLines
 
-  // Физика падения: v += g·dt до терминальной скорости, поворот шагами 90°.
-  // Фигура ПРИЗЕМЛЯЕТСЯ на стек (коллизия), лочится, вспыхивает и растворяется —
-  // как лок-даун в оригинале, ничего не проваливается сквозь пол.
   useEffect(() => {
-    if (!sims.current) {
-      sims.current = Array.from({ length: 12 }, (_, i) => ({
-        y: -60 - (i / 12) * (window.innerHeight * 0.9), // равномерно распределены по высоте
-        v: 30 + Math.random() * 60,
-        g: 260 + (i % 5) * 90,
-        vmax: 320 + (i % 4) * 120,
-        rt: Math.random() * 4,
-        rspd: 0.5 + Math.random() * 0.9,
-        locked: false, lockT: 0,
-      }))
-    }
-    const loop = createLoop((dt) => {
-      const H = window.innerHeight
-      const { prog: p, phase: ph } = live.current
-      const stackH = 26 + (ph === 'focus' ? p * 140 : 0)
-      sims.current.forEach((s, i) => {
-        const el = refs.current[i]
-        if (!el) return
-        const sc = Number(el.dataset.sc) || 1
-        const pieceH = 32 * sc
-        const floor = H - stackH - pieceH // поверхность стека
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext && canvas.getContext('2d')
+    if (!ctx) return undefined
 
-        if (!s.locked) {
-          s.v = Math.min(s.vmax, s.v + s.g * dt)
-          s.y += s.v * dt
-          s.rt += s.rspd * dt
-          if (s.y >= floor) { // коллизия со стеком → лок
-            s.y = floor
-            s.locked = true
-            s.lockT = 0
-            s.rt = Math.round(s.rt) // выравниваем поворот к 90°
-          }
-        } else {
-          s.lockT += dt
-          // вспышка при локе, потом растворение и респаун сверху
-          const flash = s.lockT < 0.12 ? 1.9 : 1
-          const fade = s.lockT < 0.35 ? 1 : Math.max(0, 1 - (s.lockT - 0.35) / 0.55)
-          el.style.opacity = fade.toFixed(2)
-          el.style.filter = flash > 1 ? 'brightness(1.9)' : ''
-          if (s.lockT > 0.95) {
-            s.locked = false
-            s.y = -80 - Math.random() * 200
-            s.v = 30 + Math.random() * 60
-            el.style.opacity = '1'
-            el.style.filter = ''
-          }
-        }
-        const rot = (Math.floor(s.rt) % 4) * 90
-        el.style.transform = `translateY(${s.y.toFixed(1)}px) rotate(${rot}deg) scale(${sc})`
+    let W = 0; let H = 0; let cell = 24; let cols = 40; let maxRows = 10
+    const st = {
+      grid: [],        // grid[row][col] = цвет | null, row 0 — дно
+      heights: [],     // высота каждого столбца (в рядах)
+      pieces: [],      // падающие фигуры
+      clearing: [],    // сгорающие ряды {row, t}
+      n: 0, spawnT: 1,
+    }
+
+    const resize = () => {
+      W = canvas.width = canvas.offsetWidth || window.innerWidth
+      H = canvas.height = canvas.offsetHeight || window.innerHeight
+      cell = Math.max(18, Math.floor(W / 52))
+      cols = Math.floor(W / cell)
+      maxRows = Math.max(6, Math.floor((H * 0.52) / cell))
+      st.grid = []
+      st.heights = new Array(cols).fill(0)
+      st.pieces = []
+      st.clearing = []
+    }
+    resize()
+    window.addEventListener('resize', resize)
+
+    // куда целится «игрок»: столбцы с минимальной высотой (+шум = живость)
+    const pickTarget = (w) => {
+      let best = 0; let bestH = Infinity
+      for (let c = 0; c <= cols - w; c += 1) {
+        let h = 0
+        for (let i = 0; i < w; i += 1) h = Math.max(h, st.heights[c + i])
+        h += Math.random() * 1.2
+        if (h < bestH) { bestH = h; best = c }
+      }
+      return best
+    }
+
+    const spawn = () => {
+      st.n += 1
+      const fast = st.n % 5 === 0 // каждая 5-я — hard drop
+      const shape = SHAPES[(Math.random() * SHAPES.length) | 0]
+      const cells = rotate(shape.cells, (Math.random() * 4) | 0)
+      const w = Math.max(...cells.map((c) => c[0])) + 1
+      const h = Math.max(...cells.map((c) => c[1])) + 1
+      const target = pickTarget(w)
+      // появляется в случайном месте и в полёте «доруливает» к цели — как рука игрока
+      const startCol = Math.max(0, Math.min(cols - w, target + ((Math.random() * 10) | 0) - 5))
+      st.pieces.push({
+        cells, color: shape.c, w, h,
+        x: startCol * cell, targetX: target * cell, col: startCol,
+        y: -h * cell - Math.random() * 60,
+        v: fast ? 420 : 30,
+        vmax: fast ? 1700 : 120 + Math.random() * 55, // в 2 раза медленнее прежнего
+        g: fast ? 4200 : 110,
+        fast, trail: [],
       })
+    }
+
+    // нижний профиль фигуры: для каждого локального x — самая нижняя клетка
+    const bottoms = (p) => {
+      const b = {}
+      p.cells.forEach(([x, y]) => { b[x] = Math.max(b[x] ?? -1, y) })
+      return b
+    }
+
+    const land = (p) => {
+      const b = bottoms(p)
+      let rowBase = 0
+      Object.entries(b).forEach(([lx, by]) => {
+        const need = st.heights[p.col + Number(lx)] - (p.h - 1 - by)
+        rowBase = Math.max(rowBase, need)
+      })
+      p.cells.forEach(([x, y]) => {
+        const row = rowBase + (p.h - 1 - y)
+        const col = p.col + x
+        if (!st.grid[row]) st.grid[row] = new Array(cols).fill(null)
+        st.grid[row][col] = p.color
+        st.heights[col] = Math.max(st.heights[col], row + 1)
+      })
+      // полные ряды → сгорание
+      st.grid.forEach((rowArr, r) => {
+        if (rowArr && rowArr.filter(Boolean).length >= cols && !st.clearing.find((c) => c.row === r)) {
+          st.clearing.push({ row: r, t: 0 })
+        }
+      })
+      // защита от переполнения: стакан слишком высок — сжигаем низ
+      if (Math.max(...st.heights) >= maxRows && st.clearing.length === 0) {
+        st.clearing.push({ row: 0, t: 0 }, { row: 1, t: 0 })
+      }
+    }
+
+    const restY = (p) => {
+      const b = bottoms(p)
+      let rowBase = 0
+      Object.entries(b).forEach(([lx, by]) => {
+        const need = st.heights[p.col + Number(lx)] - (p.h - 1 - by)
+        rowBase = Math.max(rowBase, need)
+      })
+      return H - (rowBase + p.h) * cell
+    }
+
+    const drawCell = (x, y, color, alpha = 1) => {
+      ctx.globalAlpha = alpha
+      ctx.fillStyle = color
+      ctx.fillRect(x + 1, y + 1, cell - 2, cell - 2)
+      ctx.fillStyle = 'rgba(255,255,255,0.38)'
+      ctx.fillRect(x + 1, y + 1, cell - 2, 4)
+      ctx.fillStyle = 'rgba(0,0,0,0.35)'
+      ctx.fillRect(x + 1, y + cell - 5, cell - 2, 4)
+      ctx.globalAlpha = 1
+    }
+
+    const loop = createLoop((dt) => {
+      const focus = live.current.phase === 'focus'
+      // темп «игрока»: в фокусе партия идёт бодрее
+      st.spawnT += dt
+      if (st.pieces.length < 2 && st.spawnT > (focus ? 1.1 : 1.9)) {
+        st.spawnT = 0
+        spawn()
+      }
+
+      ctx.clearRect(0, 0, W, H)
+
+      // --- стакан ---
+      st.grid.forEach((rowArr, r) => {
+        if (!rowArr) return
+        const flash = st.clearing.find((c) => c.row === r)
+        rowArr.forEach((color, c) => {
+          if (!color) return
+          const y = H - (r + 1) * cell
+          if (flash) {
+            const blink = Math.sin(flash.t * 40) > 0
+            drawCell(c * cell, y, blink ? '#ffffff' : color)
+          } else {
+            drawCell(c * cell, y, color)
+          }
+        })
+      })
+
+      // --- сгорание рядов ---
+      if (st.clearing.length) {
+        st.clearing.forEach((c) => { c.t += dt })
+        const done = st.clearing.filter((c) => c.t > 0.45)
+        if (done.length) {
+          done.sort((a, b) => b.row - a.row).forEach(({ row }) => st.grid.splice(row, 1))
+          st.clearing = []
+          st.heights = new Array(cols).fill(0)
+          st.grid.forEach((rowArr, r) => rowArr && rowArr.forEach((color, c) => {
+            if (color) st.heights[c] = Math.max(st.heights[c], r + 1)
+          }))
+          try { addLinesRef.current(done.length) } catch { /* ок */ }
+        }
+      }
+
+      // --- падающие фигуры ---
+      for (let i = st.pieces.length - 1; i >= 0; i -= 1) {
+        const p = st.pieces[i]
+        // планирование к цели по горизонтали (пока высоко)
+        const ry = restY(p)
+        if (p.y < ry - 3 * cell && Math.abs(p.x - p.targetX) > 0.5) {
+          p.x += (p.targetX - p.x) * Math.min(1, 3.2 * dt)
+          p.col = Math.max(0, Math.min(cols - p.w, Math.round(p.x / cell)))
+        }
+        // вертикаль: ускорение до терминальной скорости
+        p.v = Math.min(p.vmax, p.v + p.g * dt)
+        p.y += p.v * dt
+
+        // шлейф hard-drop
+        if (p.fast) {
+          p.trail.push(p.y)
+          if (p.trail.length > 9) p.trail.shift()
+          p.trail.forEach((ty, k) => {
+            const a = ((k + 1) / p.trail.length) * 0.22
+            p.cells.forEach(([x, y]) => {
+              ctx.globalAlpha = a
+              ctx.fillStyle = p.color
+              ctx.fillRect(p.col * cell + x * cell + 3, ty + y * cell + 3, cell - 6, cell - 6)
+            })
+          })
+          ctx.globalAlpha = 1
+        }
+
+        if (p.y >= ry) { // посадка
+          p.col = Math.max(0, Math.min(cols - p.w, Math.round(p.x / cell)))
+          land(p)
+          st.pieces.splice(i, 1)
+          continue
+        }
+        p.cells.forEach(([x, y]) => drawCell(p.col * cell + x * cell, p.y + y * cell, p.color))
+      }
     })
     loop.start()
-    return () => loop.stop()
+    return () => {
+      loop.stop()
+      window.removeEventListener('resize', resize)
+    }
   }, [])
-
-  const pieces = Array.from({ length: 12 }, (_, i) => ({
-    t: TETRO[i % TETRO.length],
-    x: (i * 8.3 + 3) % 92,
-    scale: 0.7 + (i % 3) * 0.25,
-  }))
-  const stackH = 26 + (phase === 'focus' ? prog * 140 : 0)
 
   return (
     <div className="scene scene-blocks">
       <div className="bl-grid" />
-      {pieces.map((p, i) => (
-        <div
-          key={i}
-          ref={(el) => { refs.current[i] = el }}
-          className="bl-piece"
-          data-sc={p.scale}
-          style={{ left: `${p.x}vw` }}
-        >
-          {p.t.cells.map(([cx, cy], j) => (
-            <span key={j} className="bl-cell" style={{ left: cx * 16, top: cy * 16, background: p.t.c }} />
-          ))}
-        </div>
-      ))}
-      <div className="bl-stack" style={{ height: stackH }} />
+      <canvas ref={canvasRef} className="bl-canvas" aria-hidden="true" />
     </div>
   )
 }

@@ -23,7 +23,7 @@ export default function SkinHUD() {
     return (
       <div className="skin-hud hud-pixel">
         <span className="hud-item">SCORE<b>{score}</b></span>
-        <span className="hud-item hud-coin"><i className="coin-ico" />×{pad(s.sessions || 0, 2)}</span>
+        <span className="hud-item hud-coin"><i className="coin-ico" />×{pad(s.coins || 0, 2)}</span>
         <span className="hud-item">WORLD<b>1-{(s.sessions || 0) + 1}</b></span>
         <span className="hud-item">TIME<b>{fmtTime(timeMs)}</b></span>
       </div>
@@ -49,7 +49,7 @@ export default function SkinHUD() {
       <div className="skin-hud hud-blocks">
         <span className="hud-item">SCORE<b>{score}</b></span>
         <span className="hud-item">LEVEL<b>{pad(s.sessions || 0, 2)}</b></span>
-        <span className="hud-item">LINES<b>{pad(s.focusedMin || 0, 3)}</b></span>
+        <span className="hud-item">LINES<b>{pad(s.lines || 0, 3)}</b></span>
       </div>
     )
   }

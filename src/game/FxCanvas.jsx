@@ -124,7 +124,8 @@ export default function FxCanvas() {
     const off = fx.on((type, x, y, opts) => {
       const preset = PRESETS[type]?.(opts.color)
       if (!preset) return
-      for (let i = 0; i < preset.n; i += 1) {
+      const count = opts.n || preset.n
+      for (let i = 0; i < count; i += 1) {
         particles.current.push({
           x: x + rnd(-8, 8),
           y: y + rnd(-8, 8),

@@ -35,7 +35,7 @@ export const defaultState = {
     ytUrl: '', ytStart: 0, ytEnd: 0,
     volume: 0.8,
   },
-  stats: { day: '', sessions: 0, focusedMin: 0, bestMin: 0 },
+  stats: { day: '', sessions: 0, focusedMin: 0, bestMin: 0, coins: 0, lines: 0 },
 }
 
 function loadPersisted() {
@@ -301,6 +301,14 @@ export function AppProvider({ children }) {
   }, [])
   const setCurrentGoal = useCallback((id) => setState((st) => ({ ...st, currentGoalId: id })), [])
 
+  // Игровые счётчики сцен (монеты Марио, линии тетриса)
+  const addCoins = useCallback((n = 1) => {
+    setState((st) => ({ ...st, stats: { ...st.stats, coins: (st.stats.coins || 0) + n } }))
+  }, [])
+  const addLines = useCallback((n = 1) => {
+    setState((st) => ({ ...st, stats: { ...st.stats, lines: (st.stats.lines || 0) + n } }))
+  }, [])
+
   const setMusic = useCallback((patch) => {
     setState((st) => ({ ...st, music: { ...st.music, ...patch } }))
   }, [])
@@ -343,12 +351,12 @@ export function AppProvider({ children }) {
     state, t, timer,
     startFocus, startBreak, pauseToggle, resetTimer, adjustMinutes, closeOverlay, skipBreak,
     setSettings, setBg, setBreakMin,
-    addGoal, delGoal, setCurrentGoal,
+    addGoal, delGoal, setCurrentGoal, addCoins, addLines,
     setMusic, addTracks, updateTrack, delTrack,
     ensureNotifPermission,
   }), [state, t, timer, startFocus, startBreak, pauseToggle, resetTimer, adjustMinutes,
     closeOverlay, skipBreak, setSettings, setBg, setBreakMin, addGoal, delGoal,
-    setCurrentGoal, setMusic, addTracks, updateTrack, delTrack, ensureNotifPermission])
+    setCurrentGoal, addCoins, addLines, setMusic, addTracks, updateTrack, delTrack, ensureNotifPermission])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

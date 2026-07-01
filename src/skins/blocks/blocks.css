@@ -1,34 +1,55 @@
-/* БЛОКОПАД: сцена + UI-оверрайды */
+/* БЛОКОПАД: canvas-симуляция партии + компактный аркадный UI (паритет с пиксель-квестом) */
 .scene-blocks { background: linear-gradient(#090d1d, #131a36 70%, #0b0f22); }
 .bl-grid {
-  position: absolute; inset: 0; opacity: 0.16;
+  position: absolute; inset: 0; opacity: 0.14;
   background:
     linear-gradient(rgba(255,255,255,.35) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255,255,255,.35) 1px, transparent 1px);
-  background-size: 32px 32px;
+  background-size: 26px 26px;
 }
-/* позицией фигур управляет физика (transform из rAF-цикла) */
-.bl-piece { position: absolute; top: 0; width: 48px; height: 32px; will-change: transform; }
-.bl-cell {
-  position: absolute; width: 15px; height: 15px;
-  box-shadow: inset 3px 3px 0 rgba(255, 255, 255, 0.4), inset -3px -3px 0 rgba(0, 0, 0, 0.4);
+.bl-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* --- UI: пиксель-шрифт, NES-рамки, бевел-кнопки --- */
+:root[data-skin='blocks'][data-skin] {
+  --font-display: 'Press Start 2P', monospace;
+  --radius: 4px; --radius-sm: 4px;
 }
-.bl-stack {
-  position: absolute; left: 0; right: 0; bottom: 0; height: 30px;
-  background:
-    linear-gradient(rgba(255,255,255,.25) 0 4px, transparent 4px),
-    repeating-linear-gradient(90deg, #37d6e8 0 30px, #b06cf0 30px 60px, #ffd23f 60px 90px, #5ce65c 90px 120px, #ff5d5d 120px 150px, #4d7cff 150px 180px, #ff9f40 180px 210px);
-  box-shadow: 0 -6px 26px rgba(120, 140, 255, 0.35);
-  transition: height 0.9s var(--ease);
+:root[data-skin='blocks'] .clock-digits {
+  font-size: clamp(30px, 7.5vw, 68px); letter-spacing: 3px;
+  color: #dfe6ff; text-shadow: 0 0 18px rgba(55, 214, 232, 0.5), 4px 4px 0 rgba(20, 30, 80, 0.8);
+}
+:root[data-skin='blocks'] .timer-card, :root[data-skin='blocks'] .panel,
+:root[data-skin='blocks'] .overlay-inner, :root[data-skin='blocks'] .drawer {
+  border: 3px solid #37d6e8;
+  background: rgba(9, 13, 32, 0.88);
+  box-shadow: 0 0 0 3px #090d1d, 0 0 0 5px rgba(55, 214, 232, 0.35), 0 0 30px rgba(55, 214, 232, 0.18);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+:root[data-skin='blocks'] .btn-primary, :root[data-skin='blocks'] .btn-ghost, :root[data-skin='blocks'] .btn-small,
+:root[data-skin='blocks'] .chip, :root[data-skin='blocks'] .mode-pill, :root[data-skin='blocks'] .seg,
+:root[data-skin='blocks'] .lang-btn, :root[data-skin='blocks'] .gear-btn {
+  border: 2px solid #37d6e8; border-radius: 4px;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.28), inset -2px -2px 0 rgba(0, 0, 0, 0.4);
+}
+:root[data-skin='blocks'] .btn-primary { background: #4d7cff; }
+:root[data-skin='blocks'] .btn-primary:active { box-shadow: inset -2px -2px 0 rgba(255,255,255,.28), inset 2px 2px 0 rgba(0,0,0,.4); transform: none; }
+:root[data-skin='blocks'] .brand-name, :root[data-skin='blocks'] .ov-title { font-size: 90%; line-height: 1.5; }
+:root[data-skin='blocks'] .brand-mark, :root[data-skin='blocks'] .sec-title { color: #37d6e8; }
+
+/* компактный прогресс-бар из «клеток» вместо кольца */
+:root[data-skin='blocks'] .prog-ring { display: none; }
+:root[data-skin='blocks'] .clock-wrap { width: auto; aspect-ratio: auto; padding: 10px 0 2px; }
+:root[data-skin='blocks'] .prog-bar {
+  display: block; height: 18px;
+  border: 2px solid #37d6e8; background: #090d1d;
+  box-shadow: inset 0 0 0 2px #090d1d;
+}
+:root[data-skin='blocks'] .prog-fill {
+  background: repeating-linear-gradient(90deg, #37d6e8 0 14px, #4d7cff 14px 28px, #b06cf0 28px 42px, #ffd23f 42px 56px);
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.35);
 }
 
-/* UI */
-:root[data-skin='blocks'] { --radius: 8px; --radius-sm: 6px; }
-:root[data-skin='blocks'] .clock-digits { text-shadow: 4px 4px 0 rgba(80, 100, 255, 0.35); }
-:root[data-skin='blocks'] .btn-primary { box-shadow: inset 3px 3px 0 rgba(255,255,255,.35), inset -3px -3px 0 rgba(0,0,0,.3), 0 10px 30px var(--accent-soft); border-radius: 6px; }
-:root[data-skin='blocks'] .timer-card, :root[data-skin='blocks'] .panel { border-width: 2px; }
-:root[data-skin='blocks'] .ring-fg { stroke: #37d6e8; }
-:root[data-skin='blocks'] .ready-go { color: #37d6e8; text-shadow: 6px 6px 0 rgba(80, 100, 255, 0.4); }
+:root[data-skin='blocks'] .ready-go { color: #37d6e8; text-shadow: 6px 6px 0 rgba(80, 100, 255, 0.4); font-size: clamp(34px, 7.5vw, 84px); }
 
 /* HUD */
 .hud-blocks { color: #dfe6ff; }

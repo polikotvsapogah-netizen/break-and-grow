@@ -143,4 +143,71 @@
   font-size: clamp(34px, 7.5vw, 84px);
 }
 
+/* --- Сюжетные сущности --- */
+.px-ent { position: absolute; bottom: 92px; left: 110vw; will-change: left, bottom; }
+.px-ent-coin {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #ffe9a8, #ffc93c 55%, #d99a12);
+  border: 3px solid #9a6a00; box-sizing: border-box;
+  box-shadow: inset 0 0 0 3px rgba(255,255,255,.35);
+  animation: coinSpin 1.3s ease-in-out infinite;
+}
+.px-ent-shroom { width: 34px; height: 30px; }
+.px-ent-shroom::before { /* шляпка с пятнами */
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: 19px;
+  border-radius: 10px 10px 4px 4px;
+  background:
+    radial-gradient(circle at 22% 55%, #fff 4px, transparent 4.5px),
+    radial-gradient(circle at 62% 30%, #fff 4.5px, transparent 5px),
+    radial-gradient(circle at 85% 60%, #fff 3.5px, transparent 4px),
+    #ff5d3d;
+  border: 3px solid #7a2408; box-sizing: border-box;
+}
+.px-ent-shroom::after { /* ножка с глазами */
+  content: ''; position: absolute; left: 6px; right: 6px; bottom: 0; height: 13px;
+  border-radius: 0 0 5px 5px;
+  background:
+    radial-gradient(circle at 32% 45%, #1c2340 2.5px, transparent 3px),
+    radial-gradient(circle at 68% 45%, #1c2340 2.5px, transparent 3px),
+    #ffe7c2;
+  border: 3px solid #7a2408; border-top: none; box-sizing: border-box;
+}
+.px-ent-star {
+  width: 32px; height: 32px; background: #ffd23f;
+  clip-path: polygon(50% 0, 62% 34%, 98% 36%, 70% 58%, 80% 94%, 50% 72%, 20% 94%, 30% 58%, 2% 36%, 38% 34%);
+  filter: drop-shadow(0 0 10px rgba(255, 210, 63, 0.8));
+  animation: starTwinkle 0.7s ease-in-out infinite alternate;
+}
+@keyframes starTwinkle { from { transform: scale(1) rotate(-6deg); } to { transform: scale(1.12) rotate(6deg); } }
+.px-ent-slime {
+  width: 34px; height: 24px;
+  border-radius: 50% 50% 6px 6px;
+  background:
+    radial-gradient(circle at 32% 52%, #fff 5px, transparent 5.5px),
+    radial-gradient(circle at 65% 52%, #fff 5px, transparent 5.5px),
+    radial-gradient(circle at 33% 54%, #1c2340 2.5px, transparent 3px),
+    radial-gradient(circle at 66% 54%, #1c2340 2.5px, transparent 3px),
+    #3fae4a;
+  border: 3px solid #1c5c22; box-sizing: border-box;
+  animation: slimeSquish 0.6s ease-in-out infinite alternate;
+}
+@keyframes slimeSquish { from { transform: scaleY(1); } to { transform: scaleY(0.86) scaleX(1.08); } }
+.px-ent-bird { width: 26px; height: 10px; }
+.px-ent-bird::before, .px-ent-bird::after {
+  content: ''; position: absolute; top: 0; width: 14px; height: 10px;
+  border: 3px solid #1c2340; border-bottom: none; border-radius: 100% 100% 0 0;
+  box-sizing: border-box;
+}
+.px-ent-bird::before { left: 0; animation: wingL 0.4s steps(2) infinite; }
+.px-ent-bird::after { right: 0; animation: wingR 0.4s steps(2) infinite; }
+@keyframes wingL { 50% { transform: scaleY(0.5); } }
+@keyframes wingR { 50% { transform: scaleY(0.5); } }
+
+/* Звезда: радужный герой */
+.px-hero.hero-star { animation: heroRainbow 0.5s linear infinite; }
+@keyframes heroRainbow {
+  0% { filter: drop-shadow(0 4px 0 rgba(0,0,0,.2)) hue-rotate(0deg) saturate(1.6) brightness(1.15); }
+  100% { filter: drop-shadow(0 4px 0 rgba(0,0,0,.2)) hue-rotate(360deg) saturate(1.6) brightness(1.15); }
+}
+
 @media (max-width: 700px) { .px-hero { transform-origin: 50% 100%; } }
