@@ -9,12 +9,14 @@ import SettingsPanel from './components/SettingsPanel.jsx'
 import FxCanvas from './game/FxCanvas.jsx'
 import Onboarding from './components/Onboarding.jsx'
 import TodayCard from './components/TodayCard.jsx'
+import ScenePhrase from './components/ScenePhrase.jsx'
 
 export default function App() {
   const {
     state, t, setSettings, timer, startFocus, pauseToggle,
   } = useApp()
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [guideOpen, setGuideOpen] = useState(false)
   const lang = state.settings.lang
 
   // Пробел = старт/пауза (пропускаем, когда фокус в полях ввода)
@@ -58,6 +60,9 @@ export default function App() {
           >
             {lang === 'ru' ? 'EN' : 'RU'}
           </button>
+          <button className="lang-btn" onClick={() => setGuideOpen(true)} title={t('guideTitle')}>
+            ?
+          </button>
           <button className="gear-btn" onClick={() => setSettingsOpen(true)} title={t('settings')}>
             ⚙️
           </button>
@@ -76,7 +81,19 @@ export default function App() {
       <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <BreakOverlay />
       <FxCanvas />
+      <ScenePhrase />
       <Onboarding />
+      {guideOpen && (
+        <div className="overlay" role="dialog" aria-modal="true" onClick={() => setGuideOpen(false)}>
+          <div className="overlay-inner guide-inner" onClick={(e) => e.stopPropagation()}>
+            <button className="overlay-close" onClick={() => setGuideOpen(false)}>×</button>
+            <h1 className="ov-title">💡 {t('guideTitle')}</h1>
+            <ul className="guide-list">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => <li key={i}>{t(`g${i}`)}</li>)}
+            </ul>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -597,6 +597,30 @@ input[type='range'] { accent-color: var(--accent); }
 .today-item b { font-size: 17px; font-variant-numeric: tabular-nums; }
 .today-item .ti-label { font-size: 10.5px; color: var(--muted); }
 
+/* Амбиент-фраза сцены (стиль — от скина) */
+.scene-phrase {
+  position: fixed; left: 50%; bottom: 8%; transform: translateX(-50%);
+  z-index: 6; max-width: min(640px, 90vw);
+  animation: bubbleIn 0.5s var(--ease);
+}
+.scene-phrase .phrase {
+  background: var(--glass-strong); border: 1px solid var(--stroke);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-radius: 14px; color: var(--text);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.3);
+}
+.sp-terminal .phrase { font-family: 'Courier New', monospace; font-style: normal; color: #2ee66b; }
+.sp-terminal .phrase-text::after { content: '▌'; margin-left: 2px; animation: pelletBlink 1s steps(1) infinite; }
+.sp-invaders .phrase { font-family: 'Press Start 2P', monospace; font-style: normal; font-size: 10px; line-height: 1.8; color: #9ef01a; }
+.sp-maze .phrase { color: #ffd23f; }
+.sp-synth .phrase { border-color: rgba(255, 93, 143, 0.45); }
+
+/* Гайд */
+.guide-inner { max-width: 560px; text-align: left; }
+.guide-list { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-top: 6px; }
+.guide-list li { font-size: 14px; line-height: 1.55; padding-left: 24px; position: relative; }
+.guide-list li::before { content: '▸'; position: absolute; left: 4px; color: var(--accent); }
+
 /* Секции настроек: явные разделители */
 .drawer-body .sec-title { border-top: 1px solid var(--stroke); padding-top: 16px; }
 .drawer-body .sec-title:first-of-type { border-top: none; padding-top: 0; }

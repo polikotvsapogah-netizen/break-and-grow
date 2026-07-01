@@ -56,6 +56,24 @@ export const PHRASES = {
   ],
 }
 
+/* КАРКАС ДЛЯ НЕЙРОНКИ (этап 2): единственное место интеграции API.
+   Личность промпта собирается из профиля: имя, цели с «зачем»,
+   лайкнутые фразы как стиль-ориентир. Провайдер вернёт {id, text} —
+   контракт тот же, что у getPhrase, UI не меняется. */
+export function buildPrompt(ctx, { name = '', goals = [], liked = [], lang = 'ru' } = {}) {
+  const likedTexts = (PHRASES[lang] || PHRASES.ru)
+    .filter((p) => liked.includes(p.id)).map((p) => `«${p.text}»`)
+  const goalsStr = goals.map((g) => g.why ? `${g.title} (зачем: ${g.why})` : g.title).join('; ')
+  return [
+    `Ты — точный коуч продуктивности (без клише и пафоса). Язык ответа: ${lang}.`,
+    `Контекст показа: ${ctx} (breakStart=почему пауза важна, breakSkip=мягко отговорить пропускать отдых, lineClear=завершение слоя работы, powerup=momentum, ambient=техника фокуса, focusStart=начало сессии).`,
+    name && `Имя пользователя: ${name} — обращайся лично, но не в каждой фразе.`,
+    goalsStr && `Цели пользователя: ${goalsStr}. Обыграй ЦЕЛЬ конкретно: покажи связь этой минуты с целью, дроби её на «ряды», напоминай «зачем».`,
+    likedTexts.length && `Фразы, которые пользователю зашли (повтори их ДУХ, не слова): ${likedTexts.join(' ')}`,
+    'Сгенерируй ОДНУ фразу до 140 символов, опирающуюся на науку продуктивности (консолидация памяти, закон Паркинсона, implementation intentions, поведенческая активация). Верни только текст фразы.',
+  ].filter(Boolean).join('\n')
+}
+
 const recent = []
 
 export function getPhrase(ctx, { lang = 'ru', name = '', goal = null, liked = [] } = {}) {
