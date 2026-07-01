@@ -1,6 +1,6 @@
 /* Service worker: network-first для страницы (свежие версии),
    офлайн-фолбэк из кэша. Приложение однофайловое — кэшировать почти нечего. */
-const CACHE = 'bag-v1'
+const CACHE = 'bag-v2'
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
@@ -23,7 +23,9 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return
   if (req.mode === 'navigate' || req.destination === 'document') {
     e.respondWith(
-      fetch(req)
+      // no-cache: ревалидация у сервера, а не 10-минутный HTTP-кэш GitHub Pages —
+      // иначе после деплоя «иногда» рендерится старый бандл (старые размеры фигур)
+      fetch(req, { cache: 'no-cache' })
         .then((res) => {
           const copy = res.clone()
           caches.open(CACHE).then((c) => c.put('./', copy))

@@ -16,6 +16,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 if (import.meta.env.PROD && typeof navigator !== 'undefined'
   && 'serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => { /* офлайн-режим необязателен */ })
+    navigator.serviceWorker.register('sw.js')
+      .then((reg) => reg.update()) // сразу проверить свежесть после деплоя
+      .catch(() => { /* офлайн-режим необязателен */ })
   })
 }

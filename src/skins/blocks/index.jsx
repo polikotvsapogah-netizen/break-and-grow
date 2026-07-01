@@ -84,7 +84,8 @@ export function Scene({ prog, phase }) {
       canvas.width = W * dpr
       canvas.height = H * dpr
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      cell = live.current.state.settings.tetris?.cell || 32 // размер клетки — из настроек
+      // размер клетки — из настроек, с жёстким клампом от любых кривых значений
+      cell = Math.min(48, Math.max(14, live.current.state.settings.tetris?.cell || 32))
       cols = Math.floor(W / cell)
       let top = H * 0.6
       try {
