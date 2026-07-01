@@ -8,7 +8,7 @@ import { useApp, fmtTime } from '../store.jsx'
 const pad = (n, l) => String(Math.max(0, Math.floor(n))).padStart(l, '0')
 
 export default function SkinHUD() {
-  const { state, timer } = useApp()
+  const { state, timer, t } = useApp()
   const { skin, focusMin } = state.settings
   if (!skin || skin === 'classic') return null
 
@@ -27,7 +27,7 @@ export default function SkinHUD() {
         <span className="hud-item">SCORE<b>{score}</b></span>
         <span className="hud-item hud-coin"><i className="coin-ico" />×{pad(s.coins || 0, 2)}</span>
         <span className="hud-item">WORLD<b>1-{((s.sessions || 0) % 3) + 1}</b></span>
-        <span className="hud-item">🚩<b>×{pad(toFlag, 3)}</b></span>
+        <span className="hud-item" title={t('toFlagHint')}>🚩<b>×{pad(toFlag, 3)}</b></span>
       </div>
     )
   }

@@ -78,12 +78,13 @@ export default function MusicPanel() {
     }
   }, [state.music.tracks, state.music.activeId])
 
-  // Громкость на лету
+  // Громкость на лету + глобальный мьют (🔇 в топбаре глушит и музыку)
   useEffect(() => {
-    if (audioRef.current) audioRef.current.volume = music.volume
-    ytPlayerRef.current?.setVolume?.(Math.round(music.volume * 100))
-    chiptune.setVolume(music.volume)
-  }, [music.volume])
+    const vol = settings.sound ? music.volume : 0
+    if (audioRef.current) audioRef.current.volume = vol
+    ytPlayerRef.current?.setVolume?.(Math.round(vol * 100))
+    chiptune.setVolume(vol)
+  }, [music.volume, settings.sound])
 
   // смена источника → глушим чиптюн
   useEffect(() => {

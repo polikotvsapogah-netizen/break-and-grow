@@ -94,6 +94,26 @@ export function Scene({ prog, phase }) {
       } catch { /* ок */ }
       maxRows = Math.max(4, Math.floor((H - top) / cell))
       st.grid = []; st.heights = new Array(cols).fill(0); st.piece = null; st.freeze = null
+      // затравка: нижние ряды частично заполнены СПЛОШНЯКОМ по колонкам (без дыр) —
+      // первая линия собирается в первую минуту, а не через три
+      const colors = SHAPES.map((s) => s.c)
+      for (let c = 0; c < cols; c += 1) {
+        const h = Math.random() < 0.85 ? 1 + ((Math.random() * 2.4) | 0) : 0
+        for (let r = 0; r < h; r += 1) {
+          if (!st.grid[r]) st.grid[r] = new Array(cols).fill(null)
+          st.grid[r][c] = colors[(Math.random() * colors.length) | 0]
+        }
+        st.heights[c] = h
+      }
+      // не допускаем готовых полных рядов: снимаем ВЕРХНИЕ клетки колонок (без дыр)
+      st.grid.forEach((rowArr, r) => {
+        let guard = cols
+        while (rowArr && rowArr.filter(Boolean).length >= cols && guard-- > 0) {
+          const c = (Math.random() * cols) | 0
+          const h = st.heights[c]
+          if (h > r) { st.grid[h - 1][c] = null; st.heights[c] = h - 1 }
+        }
+      })
     }
     resize()
     window.addEventListener('resize', resize)
@@ -211,24 +231,23 @@ export function Scene({ prog, phase }) {
           ctx.font = `${fpx}px "Press Start 2P", monospace`
           textW = phrase ? ctx.measureText(phrase.text).width : 0
         }
-        const len = 4.2
-        st.freeze = { rows, t: 0, phrase, textW, fpx, len, liked: false }
+        // Тайминг: 7с всего. 0–3с — красивая пульсирующая подсветка ряда;
+        // 3–4.2с — клетки красиво растворяются, стек оседает; фраза гаснет последние 2с.
+        const len = 7
+        st.freeze = { rows, t: 0, phrase, textW, fpx, len, collapsed: false, liked: false }
         const snd = live.current.state.settings
         if (snd.sound) sfx.clear(snd.volume) // фанфара синхронно со сгоранием
         chiptune.duck(len) // мелодия приглушается на время события
       }
     }
 
+    // щедрая цель (закон Фиттса): пока фраза видна — лайк кликом в ЛЮБОМ месте фона
     const onClick = (e) => {
       const f = st.freeze
       if (!f || !f.phrase || f.liked) return
-      const rect = canvas.getBoundingClientRect()
-      const y = e.clientY - rect.top
-      if (f.rows.some((r) => { const ry = H - (r + 1) * cell; return y > ry - 8 && y < ry + cell + 8 })) {
-        f.liked = true
-        actions.current.likePhrase(f.phrase.id)
-        fx.fire('dots', e.clientX, e.clientY, { n: 6 })
-      }
+      f.liked = true
+      actions.current.likePhrase(f.phrase.id)
+      fx.fire('dots', e.clientX, e.clientY, { n: 6 })
     }
     canvas.style.pointerEvents = 'auto'
     canvas.addEventListener('click', onClick)
@@ -251,12 +270,32 @@ export function Scene({ prog, phase }) {
 
       st.grid.forEach((rowArr, r) => {
         if (!rowArr) return
-        const fz = st.freeze && st.freeze.rows.includes(r)
+        const fz = st.freeze && !st.freeze.collapsed && st.freeze.rows.includes(r)
         rowArr.forEach((color, c) => {
           if (!color) return
           const y = H - (r + 1) * cell
-          if (fz) drawCell(c * cell, y, Math.sin(st.freeze.t * 14) > -0.2 ? '#ffffff' : '#4dd7ff')
-          else drawCell(c * cell, y, color)
+          if (fz) {
+            const T = st.freeze.t
+            if (T < 3) {
+              // подсветка: мягкая пульсация белый↔голубой со свечением
+              const pulse = 0.5 + 0.5 * Math.sin(T * 6)
+              ctx.shadowColor = '#4dd7ff'
+              ctx.shadowBlur = 8 + 14 * pulse
+              drawCell(c * cell, y, pulse > 0.5 ? '#ffffff' : '#7ce4f5')
+              ctx.shadowBlur = 0
+            } else {
+              // растворение: волной слева направо, клетки сжимаются и гаснут
+              const k = Math.max(0, Math.min(1, (T - 3) / 1.0 - c * 0.006))
+              const a = 1 - k
+              if (a > 0.02) {
+                ctx.globalAlpha = a
+                const pad = k * cell * 0.5
+                ctx.fillStyle = '#bfefff'
+                ctx.fillRect(c * cell + 1 + pad, y + 1 + pad, cell - 2 - pad * 2, cell - 2 - pad * 2)
+                ctx.globalAlpha = 1
+              }
+            }
+          } else drawCell(c * cell, y, color)
         })
       })
 
@@ -264,12 +303,27 @@ export function Scene({ prog, phase }) {
         const f = st.freeze
         f.t += dt
         const fLen = f.len || FREEZE_LEN
+        // стек оседает сразу после растворения (~4.2с), фраза живёт до 7с
+        if (!f.collapsed && f.t >= 4.2) {
+          f.rowY = H - (Math.max(...f.rows) + 1) * cell // фраза остаётся на месте ряда
+          f.rows.sort((a, b) => b - a).forEach((row) => st.grid.splice(row, 1))
+          st.heights = new Array(cols).fill(0)
+          st.grid.forEach((rowArr, r) => rowArr && rowArr.forEach((color, c) => {
+            if (color) st.heights[c] = Math.max(st.heights[c], r + 1)
+          }))
+          st.lines += f.rows.length
+          try { actions.current.addLines(f.rows.length) } catch { /* ок */ }
+          // искры вдоль исчезнувшего ряда
+          try { [0.2, 0.5, 0.8].forEach((p) => fx.fire('dots', W * p, f.rowY + cell / 2, { n: 4 })) } catch { /* ок */ }
+          f.collapsed = true
+        }
         if (f.phrase) {
-          // статично по центру мигающей линии, плавное появление/угасание
-          const rowY = H - (Math.max(...f.rows) + 1) * cell
+          const rowY = f.rowY ?? (H - (Math.max(...f.rows) + 1) * cell)
           const tx = (W - f.textW) / 2
-          const a = Math.min(1, f.t / 0.35) * Math.min(1, Math.max(0, (fLen - f.t) / 0.5))
-          ctx.globalAlpha = a
+          // появление 0.4с; полная яркость до 5с; красивое угасание последние 2с
+          const aIn = Math.min(1, f.t / 0.4)
+          const aOut = f.t > fLen - 2 ? Math.max(0, (fLen - f.t) / 2) : 1
+          ctx.globalAlpha = aIn * aOut
           ctx.font = `${f.fpx || 13}px "Press Start 2P", monospace`
           ctx.fillStyle = '#0a0e1e'
           ctx.fillRect(tx - 16, rowY - 4, f.textW + 56, cell + 8)
@@ -279,15 +333,8 @@ export function Scene({ prog, phase }) {
           ctx.globalAlpha = 1
         }
         if (f.t >= fLen) {
-          f.rows.sort((a, b) => b - a).forEach((row) => st.grid.splice(row, 1))
-          st.heights = new Array(cols).fill(0)
-          st.grid.forEach((rowArr, r) => rowArr && rowArr.forEach((color, c) => {
-            if (color) st.heights[c] = Math.max(st.heights[c], r + 1)
-          }))
-          st.lines += f.rows.length
-          try { actions.current.addLines(f.rows.length) } catch { /* ок */ }
           st.freeze = null
-          st.spawnT = 0.5 // сразу продолжаем партию
+          st.spawnT = 0.6 // продолжаем партию
         }
         return
       }

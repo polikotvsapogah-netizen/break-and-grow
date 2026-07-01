@@ -9,9 +9,10 @@ const ACCENTS = ['violet', 'teal', 'amber', 'rose']
 
 export default function SettingsPanel({ open, onClose }) {
   const {
-    state, t, setSettings, setBg, setBreakMin, ensureNotifPermission,
+    state, t, setSettings, setBg, setBreakMin, ensureNotifPermission, setUsername,
   } = useApp()
   const { settings } = state
+  const stateProfileName = () => state.profile.username
   const [bgYtInput, setBgYtInput] = useState(settings.bg.ytUrl)
   const [moreSkins, setMoreSkins] = useState(EXTRA_IDS.includes(settings.skin))
   const [notifState, setNotifState] = useState(
@@ -44,6 +45,18 @@ export default function SettingsPanel({ open, onClose }) {
         </header>
 
         <div className="drawer-body">
+          {/* ---- Профиль ---- */}
+          <h3 className="sec-title">{t('sectionProfile')}</h3>
+          <div className="field">
+            <span className="field-label">{t('yourName')}</span>
+            <input
+              className="profile-name"
+              defaultValue={stateProfileName()}
+              maxLength={24}
+              onBlur={(e) => e.target.value.trim() && setUsername(e.target.value)}
+            />
+          </div>
+
           {/* ---- Игровой стиль ---- */}
           <h3 className="sec-title">{t('sectionSkin')}</h3>
           <p className="skin-hint">{t('skinHint')}</p>
