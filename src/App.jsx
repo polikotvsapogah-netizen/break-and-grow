@@ -8,6 +8,7 @@ import BreakOverlay from './components/BreakOverlay.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
 import FxCanvas from './game/FxCanvas.jsx'
 import Onboarding from './components/Onboarding.jsx'
+import TodayCard from './components/TodayCard.jsx'
 
 export default function App() {
   const {
@@ -68,6 +69,7 @@ export default function App() {
         <div className="side-panels">
           <GoalsPanel />
           <MusicPanel />
+          <TodayCard />
         </div>
       </main>
 

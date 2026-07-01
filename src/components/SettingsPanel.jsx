@@ -175,10 +175,10 @@ export default function SettingsPanel({ open, onClose }) {
                 </div>
               </div>
               <div className="field">
-                <span className="field-label">{t('tetrisCell')} · {settings.tetris?.cell ?? 18}px</span>
+                <span className="field-label">{t('tetrisCell')} · {settings.tetris?.cell ?? 32}px</span>
                 <input
-                  type="range" min="12" max="28" step="1"
-                  value={settings.tetris?.cell ?? 18}
+                  type="range" min="14" max="48" step="1"
+                  value={settings.tetris?.cell ?? 32}
                   onChange={(e) => setSettings({ tetris: { ...settings.tetris, cell: Number(e.target.value) } })}
                 />
               </div>

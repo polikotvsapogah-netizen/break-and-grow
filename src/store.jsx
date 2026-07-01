@@ -25,7 +25,7 @@ export const defaultState = {
     volume: 0.6,
     bg: { type: 'gradient', gradient: 'aurora', ytUrl: '', hasVideo: false },
     dim: 0.45,
-    tetris: { on: true, s0: 1, sMax: 3, cell: 18 }, // фон-тетрис: вкл, скорости, размер клетки
+    tetris: { on: true, s0: 1, sMax: 3, cell: 32 }, // фон-тетрис: вкл, скорости, размер клетки
   },
   goals: [],
   currentGoalId: null,
@@ -51,7 +51,13 @@ function loadPersisted() {
       settings: { ...defaultState.settings, ...saved.settings,
         breakMin: { ...defaultState.settings.breakMin, ...(saved.settings?.breakMin || {}) },
         bg: { ...defaultState.settings.bg, ...(saved.settings?.bg || {}) },
-        tetris: { ...defaultState.settings.tetris, ...(saved.settings?.tetris || {}) },
+        tetris: {
+          ...defaultState.settings.tetris,
+          ...(saved.settings?.tetris || {}),
+          // миграция старого дефолта 18 → новый 32
+          cell: saved.settings?.tetris?.cell && saved.settings.tetris.cell !== 18
+            ? saved.settings.tetris.cell : 32,
+        },
       },
       music: { ...defaultState.music, ...saved.music },
       stats: { ...defaultState.stats, ...saved.stats },
