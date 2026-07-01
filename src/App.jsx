@@ -10,9 +10,25 @@ import FxCanvas from './game/FxCanvas.jsx'
 import Onboarding from './components/Onboarding.jsx'
 
 export default function App() {
-  const { state, t, setSettings } = useApp()
+  const {
+    state, t, setSettings, timer, startFocus, pauseToggle,
+  } = useApp()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const lang = state.settings.lang
+
+  // Пробел = старт/пауза (пропускаем, когда фокус в полях ввода)
+  React.useEffect(() => {
+    const h = (e) => {
+      if (e.code !== 'Space') return
+      const tag = document.activeElement?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      e.preventDefault()
+      if (timer.phase === 'idle') startFocus()
+      else pauseToggle()
+    }
+    window.addEventListener('keydown', h)
+    return () => window.removeEventListener('keydown', h)
+  }, [timer.phase, startFocus, pauseToggle])
 
   return (
     <div className="app">
@@ -25,12 +41,21 @@ export default function App() {
           <span className="brand-tag">{t('tagline')}</span>
         </div>
         <div className="topbar-actions">
+          {/* быстрый мьют, не залезая в настройки */}
+          <button
+            className="lang-btn"
+            onClick={() => setSettings({ sound: !state.settings.sound })}
+            title={t('soundOn')}
+          >
+            {state.settings.sound ? '🔊' : '🔇'}
+          </button>
+          {/* кнопка показывает ЦЕЛЕВОЙ язык (что получишь по клику) */}
           <button
             className="lang-btn"
             onClick={() => setSettings({ lang: lang === 'ru' ? 'en' : 'ru' })}
             title={t('language')}
           >
-            {lang === 'ru' ? 'RU' : 'EN'}
+            {lang === 'ru' ? 'EN' : 'RU'}
           </button>
           <button className="gear-btn" onClick={() => setSettingsOpen(true)} title={t('settings')}>
             ⚙️

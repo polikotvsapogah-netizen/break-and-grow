@@ -7,6 +7,10 @@ export default function SkinScene({ skin }) {
   const { timer } = useApp()
   const mod = SKIN_MODULES[skin]
   if (!mod) return null
+  // доступность: prefers-reduced-motion → статичный фон вместо анимированной сцены
+  if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+    return <div className="bg-gradient grad-aurora" />
+  }
   const prog = timer.phase !== 'idle' && timer.totalMs > 0
     ? Math.min(1, Math.max(0, 1 - timer.remainMs / timer.totalMs))
     : 0

@@ -564,6 +564,24 @@ input[type='range'] { accent-color: var(--accent); }
   font-size: 16px; font-weight: 600;
 }
 .ob-form .btn-primary:disabled { opacity: 0.5; cursor: default; }
+.ob-skip { color: var(--muted); font-size: 13px; text-decoration: underline dotted; padding: 6px; }
+.ob-skip:hover { color: var(--text); }
+
+/* Идл-пульс главной кнопки — мягко зовёт начать */
+.timer-card:not(.phase-focus):not(.phase-break) .btn-primary { animation: ctaPulse 3s ease-in-out infinite; }
+@keyframes ctaPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025); } }
+
+/* «Пропустить перерыв» — намеренно тихая ссылка, а не кнопка (nudge к отдыху) */
+.overlay .ov-actions .btn-ghost {
+  background: none; border: none; box-shadow: none;
+  color: var(--muted); font-size: 13px;
+  text-decoration: underline dotted;
+}
+.overlay .ov-actions .btn-ghost:hover { color: var(--text); }
+
+/* Секции настроек: явные разделители */
+.drawer-body .sec-title { border-top: 1px solid var(--stroke); padding-top: 16px; }
+.drawer-body .sec-title:first-of-type { border-top: none; padding-top: 0; }
 
 /* Доступность: меньше движения */
 @media (prefers-reduced-motion: reduce) {
