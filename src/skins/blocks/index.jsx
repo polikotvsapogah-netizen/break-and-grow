@@ -80,7 +80,7 @@ export function Scene({ prog, phase }) {
       canvas.width = W * dpr
       canvas.height = H * dpr
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      cell = Math.max(11, Math.floor(W / 96)) // мелкие клетки, как в первой «идеальной» версии
+      cell = Math.max(15, Math.floor(W / 88)) // исходная «идеальная» величина (~16px)
       cols = Math.floor(W / cell)
       let top = H * 0.6
       try {
@@ -196,11 +196,17 @@ export function Scene({ prog, phase }) {
         const phrase = getPhrase('lineClear', {
           lang: s.settings.lang, name: s.profile.username, goal, liked: s.profile.likedPhrases,
         })
-        ctx.font = '13px "Press Start 2P", monospace'
-        const textW = phrase ? ctx.measureText(phrase.text).width : 0
-        // медленный проплыв: скорость чтения ~85px/с, длительность от длины фразы
-        const len = Math.min(16, Math.max(7, (W + textW + 60) / 85))
-        st.freeze = { rows, t: 0, phrase, textW, len, liked: false }
+        // фраза СТАТИЧНО по центру линии, 4 секунды; шрифт ужимается, чтобы влезть
+        let fpx = 13
+        ctx.font = `${fpx}px "Press Start 2P", monospace`
+        let textW = phrase ? ctx.measureText(phrase.text).width : 0
+        if (textW > W - 80) {
+          fpx = 10
+          ctx.font = `${fpx}px "Press Start 2P", monospace`
+          textW = phrase ? ctx.measureText(phrase.text).width : 0
+        }
+        const len = 4.2
+        st.freeze = { rows, t: 0, phrase, textW, fpx, len, liked: false }
         const snd = live.current.state.settings
         if (snd.sound) sfx.clear(snd.volume) // фанфара синхронно со сгоранием
         chiptune.duck(len) // мелодия приглушается на время события
@@ -253,15 +259,18 @@ export function Scene({ prog, phase }) {
         f.t += dt
         const fLen = f.len || FREEZE_LEN
         if (f.phrase) {
+          // статично по центру мигающей линии, плавное появление/угасание
           const rowY = H - (Math.max(...f.rows) + 1) * cell
-          const travel = W + f.textW + 40
-          const tx = -f.textW + (f.t / (fLen - 0.4)) * travel
-          ctx.font = '13px "Press Start 2P", monospace'
+          const tx = (W - f.textW) / 2
+          const a = Math.min(1, f.t / 0.35) * Math.min(1, Math.max(0, (fLen - f.t) / 0.5))
+          ctx.globalAlpha = a
+          ctx.font = `${f.fpx || 13}px "Press Start 2P", monospace`
           ctx.fillStyle = '#0a0e1e'
-          ctx.fillRect(Math.max(0, tx - 12), rowY + 1, f.textW + 46, cell - 2)
+          ctx.fillRect(tx - 16, rowY - 4, f.textW + 56, cell + 8)
           ctx.fillStyle = f.liked ? '#ffd23f' : '#0affd0'
           ctx.fillText(f.phrase.text, tx, rowY + cell / 2 + 5)
-          ctx.fillText(f.liked ? '♥' : '♡', tx + f.textW + 14, rowY + cell / 2 + 5)
+          ctx.fillText(f.liked ? '♥' : '♡', tx + f.textW + 16, rowY + cell / 2 + 5)
+          ctx.globalAlpha = 1
         }
         if (f.t >= fLen) {
           f.rows.sort((a, b) => b - a).forEach((row) => st.grid.splice(row, 1))

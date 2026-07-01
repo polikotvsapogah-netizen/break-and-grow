@@ -13,7 +13,7 @@ export const defaultState = {
     lang: 'ru',
     theme: 'dark',
     accent: 'violet', // violet | teal | amber | rose
-    skin: 'pixel', // дефолт для новых пользователей — Марио-режим
+    skin: 'blocks', // дефолт для новых пользователей — Блокопад
     focusMin: 45,
     mode: 'goals', // goals | exercise | yoga
     breakMin: { goals: 5, exercise: 7, yoga: 12 },

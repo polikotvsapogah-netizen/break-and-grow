@@ -253,10 +253,9 @@ export function Scene({ prog, phase }) {
       }
       despawn(toRemove)
 
-      // --- флаг ---
+      // --- флаг: НЕ едет по экрану — появляется рядом с героем в момент финала ---
       if (flag) {
-        const flagX = ph === 'focus' ? HERO_X + 2 + (1 - p) * 80 : ph === 'break' ? HERO_X + 2 : 108
-        flag.style.left = `${flagX.toFixed(2)}vw`
+        flag.style.left = `${atFlagPhase ? HERO_X + 6 : 108}vw`
       }
       if (atFlagPhase && !s.flagJumped && s.y === 0) {
         s.flagJumped = true
