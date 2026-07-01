@@ -19,34 +19,62 @@ const TETRO = [
 export function Scene({ prog, phase }) {
   const refs = useRef([])
   const sims = useRef(null)
+  const live = useRef({ prog, phase })
+  live.current = { prog, phase }
 
-  // Физика падения: v += g·dt (ускорение, терминальная скорость),
-  // поворот дискретными шагами 90° — как в оригинале
+  // Физика падения: v += g·dt до терминальной скорости, поворот шагами 90°.
+  // Фигура ПРИЗЕМЛЯЕТСЯ на стек (коллизия), лочится, вспыхивает и растворяется —
+  // как лок-даун в оригинале, ничего не проваливается сквозь пол.
   useEffect(() => {
     if (!sims.current) {
       sims.current = Array.from({ length: 12 }, (_, i) => ({
-        y: -120 - Math.random() * window.innerHeight,
+        y: -60 - (i / 12) * (window.innerHeight * 0.9), // равномерно распределены по высоте
         v: 30 + Math.random() * 60,
-        g: 260 + (i % 5) * 90,          // разное «весовое» ускорение
-        vmax: 340 + (i % 4) * 130,       // терминальная скорость
+        g: 260 + (i % 5) * 90,
+        vmax: 320 + (i % 4) * 120,
         rt: Math.random() * 4,
-        rspd: 0.5 + Math.random() * 0.9, // шагов поворота в секунду
+        rspd: 0.5 + Math.random() * 0.9,
+        locked: false, lockT: 0,
       }))
     }
     const loop = createLoop((dt) => {
       const H = window.innerHeight
+      const { prog: p, phase: ph } = live.current
+      const stackH = 26 + (ph === 'focus' ? p * 140 : 0)
       sims.current.forEach((s, i) => {
         const el = refs.current[i]
         if (!el) return
-        s.v = Math.min(s.vmax, s.v + s.g * dt)
-        s.y += s.v * dt
-        s.rt += s.rspd * dt
-        if (s.y > H + 140) { // новая фигура сверху, обнуляем скорость
-          s.y = -160
-          s.v = 30 + Math.random() * 60
+        const sc = Number(el.dataset.sc) || 1
+        const pieceH = 32 * sc
+        const floor = H - stackH - pieceH // поверхность стека
+
+        if (!s.locked) {
+          s.v = Math.min(s.vmax, s.v + s.g * dt)
+          s.y += s.v * dt
+          s.rt += s.rspd * dt
+          if (s.y >= floor) { // коллизия со стеком → лок
+            s.y = floor
+            s.locked = true
+            s.lockT = 0
+            s.rt = Math.round(s.rt) // выравниваем поворот к 90°
+          }
+        } else {
+          s.lockT += dt
+          // вспышка при локе, потом растворение и респаун сверху
+          const flash = s.lockT < 0.12 ? 1.9 : 1
+          const fade = s.lockT < 0.35 ? 1 : Math.max(0, 1 - (s.lockT - 0.35) / 0.55)
+          el.style.opacity = fade.toFixed(2)
+          el.style.filter = flash > 1 ? 'brightness(1.9)' : ''
+          if (s.lockT > 0.95) {
+            s.locked = false
+            s.y = -80 - Math.random() * 200
+            s.v = 30 + Math.random() * 60
+            el.style.opacity = '1'
+            el.style.filter = ''
+          }
         }
-        const rot = Math.floor(s.rt % 4) * 90
-        el.style.transform = `translateY(${s.y.toFixed(1)}px) rotate(${rot}deg) scale(${el.dataset.sc})`
+        const rot = (Math.floor(s.rt) % 4) * 90
+        el.style.transform = `translateY(${s.y.toFixed(1)}px) rotate(${rot}deg) scale(${sc})`
       })
     })
     loop.start()

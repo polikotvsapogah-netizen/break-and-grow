@@ -77,10 +77,14 @@ export default function SettingsPanel({ open, onClose }) {
 
           <div className="field">
             <span className="field-label">{t('theme')}</span>
-            <div className="seg-row">
-              <button className={`seg ${settings.theme === 'dark' ? 'active' : ''}`} onClick={() => setSettings({ theme: 'dark' })}>🌙 {t('themeDark')}</button>
-              <button className={`seg ${settings.theme === 'light' ? 'active' : ''}`} onClick={() => setSettings({ theme: 'light' })}>☀️ {t('themeLight')}</button>
-            </div>
+            {settings.skin === 'classic' ? (
+              <div className="seg-row">
+                <button className={`seg ${settings.theme === 'dark' ? 'active' : ''}`} onClick={() => setSettings({ theme: 'dark' })}>🌙 {t('themeDark')}</button>
+                <button className={`seg ${settings.theme === 'light' ? 'active' : ''}`} onClick={() => setSettings({ theme: 'light' })}>☀️ {t('themeLight')}</button>
+              </div>
+            ) : (
+              <p className="skin-hint">{t('themeNote')}</p>
+            )}
           </div>
 
           <div className="field">

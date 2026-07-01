@@ -51,10 +51,13 @@
 }
 @keyframes ghostBob { from { transform: translateY(-2px); } to { transform: translateY(2px); } }
 
-/* режим прогресса: позициями управляет React, движение сглаживаем */
-.scene-maze.progress .mz-pac { transition: left 1s linear; }
-.scene-maze.progress .mz-eaten { transition: width 1s linear; }
-.scene-maze.progress .mz-ghost { transition: left 1s linear; }
+/* Линия прогресса сессии над коридором */
+.mz-progline {
+  position: absolute; top: -14px; left: 0; height: 5px; width: 0;
+  background: #ffd23f; border-radius: 3px;
+  box-shadow: 0 0 14px rgba(255, 210, 63, 0.7);
+  transition: width 0.6s linear;
+}
 
 /* UI */
 :root[data-skin='maze'] { --font-display: 'Press Start 2P', monospace; }

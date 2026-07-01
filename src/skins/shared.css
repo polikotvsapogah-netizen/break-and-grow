@@ -8,8 +8,11 @@
 /* Canvas частиц поверх всего, клики проходят насквозь */
 .fx-canvas { position: fixed; inset: 0; z-index: 70; pointer-events: none; }
 
-/* Тёмная база для тёмных скинов независимо от темы */
-:root[data-skin='maze'], :root[data-skin='blocks'], :root[data-skin='invaders'], :root[data-skin='synth'] {
+/* Тёмная база для тёмных скинов независимо от темы.
+   Двойной [data-skin] повышает специфичность над [data-theme='light'] —
+   иначе светлая тема «пробивает» палитру скина (баг каскада). */
+:root[data-skin='maze'][data-skin], :root[data-skin='blocks'][data-skin],
+:root[data-skin='invaders'][data-skin], :root[data-skin='synth'][data-skin] {
   --bg: #0b0d14; --text: #f2f3f7; --muted: rgba(242, 243, 247, 0.55);
   --glass: rgba(255, 255, 255, 0.065); --glass-strong: rgba(16, 18, 28, 0.8);
   --stroke: rgba(255, 255, 255, 0.12); --input-bg: rgba(255, 255, 255, 0.08);
