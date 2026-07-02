@@ -16,10 +16,18 @@ export default function TimerCard() {
   const [custom, setCustom] = useState('')
   const [flash, setFlash] = useState(null) // 'ready' | 'go'
   const flashTimers = useRef([])
+  const [glIdx, setGlIdx] = useState(0) // тикер цели: заголовок ↔ «зачем»
 
   const running = timer.phase !== 'idle'
   const displayMs = running ? timer.remainMs : settings.focusMin * 60000
   const goal = state.goals.find((g) => g.id === state.currentGoalId)
+
+  // мягкая ротация цель ↔ «зачем» каждые 9с
+  React.useEffect(() => {
+    if (!goal?.why) { setGlIdx(0); return undefined }
+    const id = setInterval(() => setGlIdx((i) => (i + 1) % 2), 9000)
+    return () => clearInterval(id)
+  }, [goal?.id, goal?.why])
   const prog = running && timer.totalMs > 0
     ? Math.min(1, Math.max(0, 1 - timer.remainMs / timer.totalMs))
     : 0
@@ -60,15 +68,13 @@ export default function TimerCard() {
             aria-selected={settings.mode === m}
             className={`mode-pill ${settings.mode === m ? 'active' : ''}`}
             onClick={() => setSettings({ mode: m })}
+            title={t(m === 'goals' ? 'modeHintGoals' : m === 'exercise' ? 'modeHintExercise' : 'modeHintYoga')}
           >
             <span className="mode-ico">{MODE_ICONS[m]}</span>
             {t(m === 'goals' ? 'modeGoals' : m === 'exercise' ? 'modeExercise' : 'modeYoga')}
           </button>
         ))}
       </div>
-      <p className="mode-hint">
-        {t(settings.mode === 'goals' ? 'modeHintGoals' : settings.mode === 'exercise' ? 'modeHintExercise' : 'modeHintYoga')}
-      </p>
 
       {/* Циферблат с кольцом прогресса */}
       <div className="clock-wrap">
@@ -143,19 +149,19 @@ export default function TimerCard() {
         )}
       </div>
 
-      {/* Текущая цель под таймером */}
+      {/* Тикер цели: тонкая строка, цель ↔ «зачем» чередуются; клик открывает панель */}
       {goal && (
-        <div className="current-goal">
-          <span className="cg-label">{t('currentGoal')}:</span> {goal.title}
-          {goal.why && <span className="cg-why"> — {goal.why}</span>}
-        </div>
-      )}
-
-      {/* Мини-статистика дня (классика; в скинах её заменяет HUD) */}
-      {state.stats.day === new Date().toISOString().slice(0, 10) && state.stats.sessions > 0 && (
-        <div className="day-stats">
-          🔥 {state.stats.sessions} {t('sessions')} · {state.stats.focusedMin} {t('minutes')} {t('todayFocus')}
-        </div>
+        <button
+          type="button"
+          className="goal-line"
+          title={t('currentGoal')}
+          onClick={() => window.dispatchEvent(new CustomEvent('bag-open-goals'))}
+        >
+          <span className="gl-tag">{t('goalTag')}</span>
+          <span key={glIdx} className="gl-text">
+            {glIdx === 1 && goal.why ? goal.why : goal.title}
+          </span>
+        </button>
       )}
 
       {/* READY? → GO! */}

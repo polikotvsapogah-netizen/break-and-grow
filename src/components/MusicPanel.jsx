@@ -11,7 +11,7 @@ export default function MusicPanel() {
     state, t, timer, setMusic, addTracks, updateTrack, delTrack,
   } = useApp()
   const { music, settings } = state
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(false) // минимализм: свёрнута по умолчанию
   const [playing, setPlaying] = useState(false)
   const [ytInput, setYtInput] = useState(music.ytUrl)
 
@@ -181,7 +181,12 @@ export default function MusicPanel() {
     <section className={`panel music-panel ${open ? '' : 'collapsed'}`}>
       <header className="panel-head" onClick={() => setOpen(!open)}>
         <h2>🎵 {t('music')}</h2>
-        <span className="panel-toggle">{open ? '−' : '+'}</span>
+        <span className="head-meta">
+          <span className="head-badge">
+            {t(music.source === 'none' ? 'musicNone' : music.source === 'game' ? 'musicGame' : music.source === 'local' ? 'musicLocal' : music.source === 'youtube' ? 'musicYouTube' : 'musicSpotify')}
+          </span>
+          <span className="panel-toggle">{open ? '−' : '+'}</span>
+        </span>
       </header>
 
       {open && (

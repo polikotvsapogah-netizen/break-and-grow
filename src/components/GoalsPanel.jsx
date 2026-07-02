@@ -1,11 +1,18 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useApp } from '../store.jsx'
 
 export default function GoalsPanel() {
   const { state, t, addGoal, delGoal, setCurrentGoal } = useApp()
   const [title, setTitle] = useState('')
   const [why, setWhy] = useState('')
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(false) // минимализм: свёрнута, разворачивается кликом
+
+  // клик по строке цели под таймером раскрывает панель
+  useEffect(() => {
+    const h = () => setOpen(true)
+    window.addEventListener('bag-open-goals', h)
+    return () => window.removeEventListener('bag-open-goals', h)
+  }, [])
 
   const submit = () => {
     if (!title.trim()) return
@@ -18,7 +25,10 @@ export default function GoalsPanel() {
     <section className={`panel goals-panel ${open ? '' : 'collapsed'}`}>
       <header className="panel-head" onClick={() => setOpen(!open)}>
         <h2>🎯 {t('goals')}</h2>
-        <span className="panel-toggle">{open ? '−' : '+'}</span>
+        <span className="head-meta">
+          {state.goals.length > 0 && <span className="head-badge">{state.goals.length}</span>}
+          <span className="panel-toggle">{open ? '−' : '+'}</span>
+        </span>
       </header>
 
       {open && (
