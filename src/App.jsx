@@ -17,7 +17,15 @@ export default function App() {
   } = useApp()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [guideOpen, setGuideOpen] = useState(false)
+  const [openPanel, setOpenPanel] = useState(null) // 'goals' | 'music' | 'today' | null
   const lang = state.settings.lang
+
+  // строка цели под таймером открывает панель целей
+  React.useEffect(() => {
+    const h = () => setOpenPanel('goals')
+    window.addEventListener('bag-open-goals', h)
+    return () => window.removeEventListener('bag-open-goals', h)
+  }, [])
 
   // Пробел = старт/пауза (пропускаем, когда фокус в полях ввода)
   React.useEffect(() => {
@@ -72,9 +80,32 @@ export default function App() {
       <main className="layout">
         <TimerCard />
         <div className="side-panels">
-          <GoalsPanel />
-          <MusicPanel />
-          <TodayCard />
+          {/* компактный док: панели открываются кнопками, не висят на экране */}
+          <div className="side-dock">
+            <button
+              className={`dock-chip ${openPanel === 'goals' ? 'active' : ''}`}
+              onClick={() => setOpenPanel(openPanel === 'goals' ? null : 'goals')}
+            >
+              🎯 {t('modeGoals')}
+              {state.goals.length > 0 && <span className="dock-badge">{state.goals.length}</span>}
+            </button>
+            <button
+              className={`dock-chip ${openPanel === 'music' ? 'active' : ''}`}
+              onClick={() => setOpenPanel(openPanel === 'music' ? null : 'music')}
+            >
+              🎵 {t('music')}
+            </button>
+            <button
+              className={`dock-chip ${openPanel === 'today' ? 'active' : ''}`}
+              title={t('today')}
+              onClick={() => setOpenPanel(openPanel === 'today' ? null : 'today')}
+            >
+              📊
+            </button>
+          </div>
+          <GoalsPanel open={openPanel === 'goals'} />
+          <MusicPanel open={openPanel === 'music'} />
+          <TodayCard open={openPanel === 'today'} />
         </div>
       </main>
 

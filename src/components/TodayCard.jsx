@@ -3,8 +3,9 @@ import { useApp } from '../store.jsx'
 
 /* Мини-дашборд дня: сессии/минуты — за сегодня (сбрасываются в полночь),
    монеты/линии — накопительные. Чистая типографика, шрифт и акцент — от темы. */
-export default function TodayCard() {
+export default function TodayCard({ open }) {
   const { state, t } = useApp()
+  if (!open) return null
   const today = new Date().toISOString().slice(0, 10)
   const s = state.stats
   const fresh = s.day === today

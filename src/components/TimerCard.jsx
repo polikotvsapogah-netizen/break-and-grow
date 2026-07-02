@@ -149,20 +149,25 @@ export default function TimerCard() {
         )}
       </div>
 
-      {/* Тикер цели: тонкая строка, цель ↔ «зачем» чередуются; клик открывает панель */}
-      {goal && (
-        <button
-          type="button"
-          className="goal-line"
-          title={t('currentGoal')}
-          onClick={() => window.dispatchEvent(new CustomEvent('bag-open-goals'))}
-        >
-          <span className="gl-tag">{t('goalTag')}</span>
-          <span key={glIdx} className="gl-text">
-            {glIdx === 1 && goal.why ? goal.why : goal.title}
-          </span>
-        </button>
-      )}
+      {/* Тикер цели: тонкая строка, цель ↔ «зачем» чередуются; клик открывает панель.
+          Виден всегда: без цели — тихое приглашение добавить */}
+      <button
+        type="button"
+        className="goal-line"
+        title={t('currentGoal')}
+        onClick={() => window.dispatchEvent(new CustomEvent('bag-open-goals'))}
+      >
+        {goal ? (
+          <>
+            <span className="gl-tag">{t('goalTag')}</span>
+            <span key={glIdx} className="gl-text">
+              {glIdx === 1 && goal.why ? goal.why : goal.title}
+            </span>
+          </>
+        ) : (
+          <span className="gl-text gl-empty">+ {t('addGoal')}</span>
+        )}
+      </button>
 
       {/* READY? → GO! */}
       {flash && (

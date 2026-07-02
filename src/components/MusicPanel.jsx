@@ -6,12 +6,12 @@ import { chiptune } from '../game/chiptune.js'
 
 const SOURCES = ['none', 'game', 'local', 'youtube', 'spotify']
 
-export default function MusicPanel() {
+export default function MusicPanel({ open }) {
   const {
     state, t, timer, setMusic, addTracks, updateTrack, delTrack,
   } = useApp()
   const { music, settings } = state
-  const [open, setOpen] = useState(false) // минимализм: свёрнута по умолчанию
+  // всегда смонтирована (аудио-движки живут здесь), UI показывается доком
   const [playing, setPlaying] = useState(false)
   const [ytInput, setYtInput] = useState(music.ytUrl)
 
@@ -178,19 +178,9 @@ export default function MusicPanel() {
   }
 
   return (
-    <section className={`panel music-panel ${open ? '' : 'collapsed'}`}>
-      <header className="panel-head" onClick={() => setOpen(!open)}>
-        <h2>🎵 {t('music')}</h2>
-        <span className="head-meta">
-          <span className="head-badge">
-            {t(music.source === 'none' ? 'musicNone' : music.source === 'game' ? 'musicGame' : music.source === 'local' ? 'musicLocal' : music.source === 'youtube' ? 'musicYouTube' : 'musicSpotify')}
-          </span>
-          <span className="panel-toggle">{open ? '−' : '+'}</span>
-        </span>
-      </header>
-
-      {open && (
-        <div className="panel-body">
+    <section className="panel music-panel dock-panel" style={{ display: open ? undefined : 'none' }}>
+      {(
+        <div className="panel-body" style={{ paddingTop: 16 }}>
           {/* Источник */}
           <div className="seg-row">
             {SOURCES.map((s) => (
