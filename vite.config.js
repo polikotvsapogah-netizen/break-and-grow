@@ -6,4 +6,8 @@ import { viteSingleFile } from 'vite-plugin-singlefile'
 export default defineConfig({
   plugins: [react(), viteSingleFile()],
   base: './',
+  define: {
+    // билд-маркер: страница сама проверяет свою свежесть (обход 10-мин кэша GH Pages)
+    __BUILD__: JSON.stringify(`bag-build:${Date.now().toString(36)}`),
+  },
 })

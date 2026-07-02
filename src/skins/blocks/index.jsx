@@ -81,6 +81,8 @@ export function Scene({ prog, phase }) {
       const dpr = Math.min(2, window.devicePixelRatio || 1)
       W = canvas.offsetWidth || window.innerWidth
       H = canvas.offsetHeight || window.innerHeight
+      // защита от раннего маунта до раскладки: нулевая ширина → повтор через кадр
+      if (!canvas.offsetWidth) requestAnimationFrame(() => resize())
       canvas.width = W * dpr
       canvas.height = H * dpr
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)

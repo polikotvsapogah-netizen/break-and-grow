@@ -1,6 +1,6 @@
 /* Service worker: network-first для страницы (свежие версии),
    офлайн-фолбэк из кэша. Приложение однофайловое — кэшировать почти нечего. */
-const CACHE = 'bag-v2'
+const CACHE = 'bag-v3'
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
@@ -35,9 +35,12 @@ self.addEventListener('fetch', (e) => {
     )
     return
   }
+  // запросы с query (vercheck и т.п.) не кэшируем и не отдаём из кэша
+  const url = new URL(req.url)
+  if (url.search) return
   e.respondWith(
     caches.match(req).then((hit) => hit || fetch(req).then((res) => {
-      if (res.ok && new URL(req.url).origin === location.origin) {
+      if (res.ok && url.origin === location.origin) {
         const copy = res.clone()
         caches.open(CACHE).then((c) => c.put(req, copy))
       }
