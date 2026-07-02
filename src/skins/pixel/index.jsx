@@ -229,8 +229,8 @@ export function Scene({ prog, phase }) {
           if (s.t > (e.deadAt || 0)) toRemove.push(e.id)
           continue
         }
-        if (e.type === 'slime') e.wx -= 2.2 * dt
-        if (e.type === 'bird') e.wx += speed * 0.4 * dt
+        if (speed > 0 && e.type === 'slime') e.wx -= 2.2 * dt
+        if (speed > 0 && e.type === 'bird') e.wx += speed * 0.4 * dt
         if (e.type === 'star') e.y = 96 + Math.sin(s.t * 3 + e.id) * 14
         const sx = e.wx - s.dist
         if (sx < -14) { toRemove.push(e.id); continue }

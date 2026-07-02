@@ -38,6 +38,7 @@ export function Scene({ prog, phase }) {
     }
 
     const loop = createLoop((dt) => {
+      if (live.current.phase === 'break') return // перерыв = пауза
       const focus = live.current.phase === 'focus'
       const v = focus ? 260 : 130 // px/сек — аркадная постоянная скорость
       st.s += v * dt

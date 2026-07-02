@@ -265,6 +265,8 @@ export function Scene({ prog, phase }) {
 
     const FREEZE_LEN = 6
     const loop = createLoop((dt) => {
+      // перерыв = пауза партии (канвас держит последний кадр)
+      if (live.current.phase === 'break') return
       const focus = live.current.phase === 'focus'
       if (focus && !st.freeze) st.focusT += dt
 

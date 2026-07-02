@@ -4,6 +4,8 @@
 :root[data-phase='focus'] { --spd: 0.45; }
 
 .scene { position: absolute; inset: 0; overflow: hidden; }
+/* Перерыв = пауза всех игровых сцен (CSS-анимации замирают, rAF-циклы стоят) */
+:root[data-phase='break'] .scene, :root[data-phase='break'] .scene * { animation-play-state: paused !important; }
 
 /* Canvas частиц поверх всего, клики проходят насквозь */
 .fx-canvas { position: fixed; inset: 0; z-index: 70; pointer-events: none; }

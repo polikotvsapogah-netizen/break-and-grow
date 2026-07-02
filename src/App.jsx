@@ -52,6 +52,29 @@ export default function App() {
           <span className="brand-tag">{t('tagline')}</span>
         </div>
         <div className="topbar-actions">
+          {/* панели — иконками в топбаре, по канону глобальных тумблеров */}
+          <button
+            className={`lang-btn dock-top ${openPanel === 'goals' ? 'active' : ''}`}
+            title={t('goals')}
+            onClick={() => setOpenPanel(openPanel === 'goals' ? null : 'goals')}
+          >
+            🎯
+            {state.goals.length > 0 && <b className="dock-count">{state.goals.length}</b>}
+          </button>
+          <button
+            className={`lang-btn dock-top ${openPanel === 'music' ? 'active' : ''}`}
+            title={t('music')}
+            onClick={() => setOpenPanel(openPanel === 'music' ? null : 'music')}
+          >
+            🎵
+          </button>
+          <button
+            className={`lang-btn dock-top ${openPanel === 'today' ? 'active' : ''}`}
+            title={t('today')}
+            onClick={() => setOpenPanel(openPanel === 'today' ? null : 'today')}
+          >
+            📊
+          </button>
           {/* быстрый мьют, не залезая в настройки */}
           <button
             className="lang-btn"
@@ -79,35 +102,14 @@ export default function App() {
 
       <main className="layout">
         <TimerCard />
-        <div className="side-panels">
-          {/* компактный док: панели открываются кнопками, не висят на экране */}
-          <div className="side-dock">
-            <button
-              className={`dock-chip ${openPanel === 'goals' ? 'active' : ''}`}
-              onClick={() => setOpenPanel(openPanel === 'goals' ? null : 'goals')}
-            >
-              🎯 {t('modeGoals')}
-              {state.goals.length > 0 && <span className="dock-badge">{state.goals.length}</span>}
-            </button>
-            <button
-              className={`dock-chip ${openPanel === 'music' ? 'active' : ''}`}
-              onClick={() => setOpenPanel(openPanel === 'music' ? null : 'music')}
-            >
-              🎵 {t('music')}
-            </button>
-            <button
-              className={`dock-chip ${openPanel === 'today' ? 'active' : ''}`}
-              title={t('today')}
-              onClick={() => setOpenPanel(openPanel === 'today' ? null : 'today')}
-            >
-              📊
-            </button>
-          </div>
-          <GoalsPanel open={openPanel === 'goals'} />
-          <MusicPanel open={openPanel === 'music'} />
-          <TodayCard open={openPanel === 'today'} />
-        </div>
       </main>
+
+      {/* панели — поповером под топбаром; MusicPanel всегда смонтирована (движки) */}
+      <div className="dock-pop">
+        <GoalsPanel open={openPanel === 'goals'} />
+        <MusicPanel open={openPanel === 'music'} />
+        <TodayCard open={openPanel === 'today'} />
+      </div>
 
       <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <BreakOverlay />
