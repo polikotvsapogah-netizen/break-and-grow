@@ -153,10 +153,12 @@ export function Scene({ prog, phase }) {
           const key = String(Q)
           if (!s.qCool[key] || s.t - s.qCool[key] > 45) {
             s.qCool[key] = s.t
-            const blockPxX = (sx + 1) * vwPx
-            const blockPxY = window.innerHeight - 92 - 262 - 30
-            fx.fire('coins', blockPxX, blockPxY, { n: 4 })
+            // РЕАЛЬНАЯ физика: одна монета выбивается из блока дугой (как в оригинале)
+            s.ents.push({ id: s.nextId++, type: 'coin', pop: true, taken: false, wx: s.dist + sx + 1, y: 308, vy: 380 })
+            setVer((v) => v + 1)
             addCoinsRef.current(1)
+            const snd = appRef.current.appState.settings
+            if (snd.sound) sfx.coin(snd.volume)
           }
         }
       }
@@ -229,13 +231,19 @@ export function Scene({ prog, phase }) {
           if (s.t > (e.deadAt || 0)) toRemove.push(e.id)
           continue
         }
+        // выбитая монета: баллистика вверх-вниз, исчезает за блоком
+        if (e.pop) {
+          e.vy -= 1500 * dt
+          e.y += e.vy * dt
+          if (e.vy < 0 && e.y <= 300) { toRemove.push(e.id); continue }
+        }
         if (speed > 0 && e.type === 'slime') e.wx -= 2.2 * dt
         if (speed > 0 && e.type === 'bird') e.wx += speed * 0.4 * dt
         if (e.type === 'star') e.y = 96 + Math.sin(s.t * 3 + e.id) * 14
         const sx = e.wx - s.dist
         if (sx < -14) { toRemove.push(e.id); continue }
-        // сбор: контакт с телом героя (позиция с учётом отката dx)
-        if (e.type !== 'bird' && Math.abs(sx - (heroL + 0.9)) < 1.9) {
+        // сбор: контакт с телом героя (позиция с учётом отката dx); выбитые не собираются
+        if (!e.pop && e.type !== 'bird' && Math.abs(sx - (heroL + 0.9)) < 1.9) {
           const heroTop = s.y + 60
           const overlap = e.y < heroTop + 12 && e.y + 26 > s.y - 6
           if (overlap) {
@@ -262,14 +270,11 @@ export function Scene({ prog, phase }) {
         s.vy = 860; s.y = 0.001; s.sx = 0.8; s.sy = 1.25
       }
       // финал уровня: салют у флага (по-разному ощущается за счёт палитры уровня)
+      // финал: только фанфара и прыжок — без лишних салютов
       if (atFlagPhase && !s.fired && flag) {
         s.fired = true
-        try {
-          const r = flag.getBoundingClientRect()
-          fx.fire('coins', r.left, r.top + 10, { n: 10 })
-          const snd = appRef.current.appState.settings
-          if (snd.sound) sfx.flag(snd.volume) // фанфара финала уровня
-        } catch { /* ок */ }
+        const snd = appRef.current.appState.settings
+        if (snd.sound) sfx.flag(snd.volume)
       }
       if (ph === 'focus' && p < 0.9) { s.flagJumped = false; s.fired = false }
 
