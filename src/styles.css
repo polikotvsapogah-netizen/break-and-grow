@@ -585,17 +585,31 @@ input[type='range'] { accent-color: var(--accent); }
   font-size: 14px; font-weight: 600;
 }
 
-/* Карточка «Сегодня» */
-.today-best { font-size: 11.5px; color: var(--muted); }
-.today-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 0 20px 18px; }
+/* Карточка «Сегодня»: строгая типографика, без плиток и эмодзи */
+.today-best { font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
+.today-grid { display: grid; grid-template-columns: repeat(4, 1fr); padding: 2px 20px 18px; }
 .today-item {
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
-  padding: 10px 6px; border-radius: var(--radius-sm);
-  background: var(--input-bg);
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 6px 4px;
 }
-.today-item .ti-ico { font-size: 15px; }
-.today-item b { font-size: 17px; font-variant-numeric: tabular-nums; }
-.today-item .ti-label { font-size: 10.5px; color: var(--muted); }
+.today-item + .today-item { border-left: 1px solid var(--stroke); }
+.today-item b {
+  font-family: var(--font-display);
+  font-size: 19px; font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+.today-item .ti-label {
+  font-size: 9.5px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.12em;
+}
+/* в аркадных темах цифры — их фирменным цветом */
+:root[data-skin='blocks'] .today-item b { color: #37d6e8; font-size: 15px; }
+:root[data-skin='maze'] .today-item b { color: #ffd23f; font-size: 15px; }
+:root[data-skin='invaders'] .today-item b { color: #9ef01a; font-size: 15px; }
+:root[data-skin='pixel'] .today-item b { font-size: 15px; }
+:root[data-skin='terminal'] .today-item b { color: #2ee66b; }
 
 /* Амбиент-фраза сцены (стиль — от скина) */
 .scene-phrase {
