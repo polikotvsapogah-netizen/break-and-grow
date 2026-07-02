@@ -113,25 +113,54 @@ export default function BreakOverlay() {
               </div>
             )}
 
-            {(settings.mode === 'exercise' || settings.mode === 'yoga') && (
-              <div className="ov-routine">
-                <h1 className="ov-title">
-                  {settings.mode === 'exercise' ? `⚡ ${t('exerciseTitle')}` : `🧘 ${t('yogaTitle')}`}
-                </h1>
-                <ol className="routine-list">
-                  {routine.map((r, i) => (
-                    <li key={i} style={{ animationDelay: `${i * 0.12}s` }}>
-                      <span className="r-name">{r.name}</span>
-                      <span className="r-detail">{r.detail}</span>
-                    </li>
-                  ))}
-                </ol>
-                {settings.mode === 'yoga' && <p className="ov-breathe">{t('breathe')}</p>}
-                <button className="btn-ghost btn-shuffle" onClick={() => setSeed((s) => s + 1)}>
-                  ↻ {t('nextExercise')}
-                </button>
-              </div>
-            )}
+            {(settings.mode === 'exercise' || settings.mode === 'yoga') && (() => {
+              // Ведомая тренировка: перерыв делится на равные слоты по упражнениям,
+              // текущее — крупно со своим таймером, выполненные отмечаются ✓
+              let curIdx = 0; let itemProg = 0; let itemRemainMs = 0
+              if (isBreakRunning && routine.length && timer.totalMs > 0) {
+                const slice = timer.totalMs / routine.length
+                const elapsed = timer.totalMs - timer.remainMs
+                curIdx = Math.min(routine.length - 1, Math.floor(elapsed / slice))
+                const inItem = elapsed - curIdx * slice
+                itemProg = Math.min(1, inItem / slice)
+                itemRemainMs = Math.max(0, slice - inItem)
+              }
+              const cur = routine[curIdx]
+              return (
+                <div className="ov-routine">
+                  <h1 className="ov-title">
+                    {settings.mode === 'exercise' ? `⚡ ${t('exerciseTitle')}` : `🧘 ${t('yogaTitle')}`}
+                  </h1>
+                  {cur && (
+                    <div className="gx-cur" key={curIdx}>
+                      <span className="gx-step">{curIdx + 1} / {routine.length}</span>
+                      <h2 className="gx-name">{cur.name}</h2>
+                      <p className="gx-detail">{cur.detail}</p>
+                      {isBreakRunning && (
+                        <div className="gx-progress">
+                          <div className="gx-bar"><span style={{ width: `${(itemProg * 100).toFixed(1)}%` }} /></div>
+                          <span className="gx-timer">{fmtTime(itemRemainMs)}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <ul className="gx-queue">
+                    {routine.map((r, i) => (
+                      <li key={i} className={i < curIdx ? 'done' : i === curIdx ? 'cur' : ''}>
+                        <i>{i < curIdx ? '✓' : i + 1}</i>
+                        <span>{r.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {settings.mode === 'yoga' && <p className="ov-breathe">{t('breathe')}</p>}
+                  {!isBreakRunning && (
+                    <button className="btn-ghost btn-shuffle" onClick={() => setSeed((s) => s + 1)}>
+                      ↻ {t('nextExercise')}
+                    </button>
+                  )}
+                </div>
+              )
+            })()}
 
             {/* Философия перерыва — кликабельная (лайк = запомнить предпочтение) */}
             <Phrase phrase={breakPhrase} className="ov-break-phrase" />
